@@ -1,0 +1,23 @@
+# <tipo>[escopo opcional]: <descrição curta>
+# |<----  Usar no máximo 72 caracteres  ---->|
+
+# Explicação mais detalhada, se necessária
+# |<----   Tente limitar cada linha a 72 caracteres   ---->|
+
+# * feat     : nova funcionalidade
+# * fix      : correção de bug
+# * docs     : alterações na documentação
+# * style    : formatação, ponto e vírgula, etc; sem alteração de código
+# * refactor : refatoração de código
+# * test     : adicionando ou modificando testes
+# * chore    : alterações em arquivos de build, pacotes, etc
+# * perf     : melhorias de performance
+# * ci       : alterações em CI/CD
+# * build    : alterações no sistema de build ou deps externas
+
+# Lembre-se:
+# 1. Linha de assunto no imperativo (adiciona, corrige, refatora)
+# 2. Não terminar a linha de assunto com ponto
+# 3. Primeira letra maiúscula na descrição
+# 4. Descrever o "por quê" no corpo, não o "o quê"
+# 5. Separar assuntos em commits diferentes 

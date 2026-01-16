@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Temporarily disabled until ESLint is fixed
+# pnpm lint-staged

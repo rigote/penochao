@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+  - '@swc/core'
+  - bufferutil
+  - core-js-pure
+  - esbuild
+  - sharp
+  - unrs-resolver

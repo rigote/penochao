@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+:root {
+  --radius: 0.625rem;
+  
+  /* Light theme - cores mais vibrantes e modernas */
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.2 0.028 261.692);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.028 261.692);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.028 261.692);
+  --primary: oklch(0.5 0.25 300); /* Roxo mais vibrante */
+  --primary-foreground: oklch(0.98 0.002 247.839);
+  --secondary: oklch(0.95 0.03 264.542);
+  --secondary-foreground: oklch(0.3 0.034 264.665);
+  --muted: oklch(0.96 0.02 264.542);
+  --muted-foreground: oklch(0.55 0.027 264.364);
+  --accent: oklch(0.9 0.1 300);
+  --accent-foreground: oklch(0.2 0.034 264.665);
+  --destructive: oklch(0.6 0.25 27.325);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.02 264.531);
+  --input: oklch(0.9 0.02 264.531);
+  --ring: oklch(0.5 0.25 300);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+.dark {
+  /* Dark theme - cores mais profundas e contrastantes */
+  --background: oklch(0.1 0.028 261.692);
+  --foreground: oklch(0.98 0.002 247.839);
+  --card: oklch(0.15 0.034 264.665);
+  --card-foreground: oklch(0.98 0.002 247.839);
+  --popover: oklch(0.15 0.034 264.665);
+  --popover-foreground: oklch(0.98 0.002 247.839);
+  --primary: oklch(0.7 0.25 300); /* Roxo mais brilhante no dark mode */
+  --primary-foreground: oklch(0.1 0.034 264.665);
+  --secondary: oklch(0.2 0.033 256.848);
+  --secondary-foreground: oklch(0.98 0.002 247.839);
+  --muted: oklch(0.2 0.033 256.848);
+  --muted-foreground: oklch(0.7 0.022 261.325);
+  --accent: oklch(0.6 0.2 300);
+  --accent-foreground: oklch(0.98 0.002 247.839);
+  --destructive: oklch(0.7 0.2 22.216);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 15%);
+  --input: oklch(1 0 0 / 20%);
+  --ring: oklch(0.7 0.25 300);
+}
