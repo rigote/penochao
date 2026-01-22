@@ -6,6 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/db"
 import { verificationTokens, users } from "@/db/schema/auth"
 import { eq, and, gt } from "drizzle-orm"
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { html, text } from "./auth-email-templates"
 
 export const authOptions: NextAuthOptions = {

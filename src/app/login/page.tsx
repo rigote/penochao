@@ -3,7 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import { UserAuthForm } from "@/app/login/components/user-auth-form"
-import { signIn } from "next-auth/react"
 
 export default function LoginPage() {
   return (

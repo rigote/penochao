@@ -51,7 +51,6 @@ type ExpenseType = "essential" | "non_essential"
 
 export function QuickAdd({ categories }: QuickAddProps) {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [transactionType, setTransactionType] = useState<TransactionType>("income")
   const [dialogOpen, setDialogOpen] = useState(false)

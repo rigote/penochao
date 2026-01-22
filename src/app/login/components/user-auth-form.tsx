@@ -24,7 +24,7 @@ export function UserAuthForm({ className }: { className?: string }) {
   const [email, setEmail] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
 
-  const { register, handleSubmit, formState: { errors }, setFocus } = useForm<FormData>()
+  const { register, handleSubmit, setFocus } = useForm<FormData>()
 
   // Step 1: Send OTP
   async function onSendOtp(data: FormData) {
@@ -43,7 +43,7 @@ export function UserAuthForm({ className }: { className?: string }) {
       toast.success("Código enviado para seu e-mail!")
       // Focus on code input after small delay
       setTimeout(() => setFocus("code"), 100)
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erro ao enviar código. Tente novamente.")
     } finally {
       setIsLoading(false)
@@ -67,7 +67,7 @@ export function UserAuthForm({ className }: { className?: string }) {
         router.push("/dashboard")
         router.refresh()
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erro ao fazer login.")
     } finally {
       setIsLoading(false)

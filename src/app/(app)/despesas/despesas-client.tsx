@@ -51,13 +51,12 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/app/components/ui/pagination"
-import { Plus, Pencil, Trash2, ArrowDownCircle, Wallet, AlertTriangle, ChevronRight, Sparkles, TrendingDown, Zap } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowDownCircle, Wallet, AlertTriangle, Sparkles, TrendingDown, Zap } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -288,7 +287,7 @@ export function DespesasClient({
     router.push(`?${params.toString()}`)
   }
 
-  const filteredCategories = categories.filter(c => c.type === type)
+  // Categories are filtered in the Select component directly
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

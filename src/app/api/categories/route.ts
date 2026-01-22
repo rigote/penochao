@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     // Type condition if provided
     if (type) {
-      // @ts-ignore
+      // @ts-expect-error - type is validated string
       conditions.push(eq(categories.type, type))
     }
 

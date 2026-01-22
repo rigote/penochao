@@ -46,13 +46,12 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/app/components/ui/pagination"
-import { Plus, Pencil, Trash2, ArrowUpCircle, ChevronRight, Sparkles, TrendingUp } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowUpCircle, Sparkles, TrendingUp } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 

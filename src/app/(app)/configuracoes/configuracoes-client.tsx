@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
 import { Separator } from "@/app/components/ui/separator"
-import { Settings as SettingsIcon, Save, PiggyBank, Sparkles, ChevronRight, Target, Shield, FolderTree } from "lucide-react"
+import { Settings as SettingsIcon, Save, PiggyBank, Sparkles, ChevronRight, Shield, FolderTree } from "lucide-react"
 
 interface UserSettings {
   emergencyFundMonths: string

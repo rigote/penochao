@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createCategorySchema, CreateCategoryInput, updateCategorySchema } from "@/lib/validations/finance"
+import { createCategorySchema, CreateCategoryInput } from "@/lib/validations/finance"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog"
 import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"

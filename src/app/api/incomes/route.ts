@@ -86,7 +86,7 @@ export async function DELETE(request: Request) {
       if (body.ids && Array.isArray(body.ids)) {
         loadIds = body.ids
       }
-    } catch (e) {
+    } catch (_e) {
       // No body or invalid JSON, ignore
     }
 
