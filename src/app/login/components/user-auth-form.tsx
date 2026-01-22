@@ -17,7 +17,7 @@ interface FormData {
 }
 
 export function UserAuthForm({ onSubmit, className }: { onSubmit: (data: FormData) => void, className?: string }) {
-  const { handleSubmit, formState: { isSubmitting } } = useForm<FormData>()
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>()
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -35,6 +35,7 @@ export function UserAuthForm({ onSubmit, className }: { onSubmit: (data: FormDat
               autoComplete="email"
               autoCorrect="off"
               disabled={isSubmitting}
+              {...register("email")}
             />
           </div>
           <Button disabled={isSubmitting}>

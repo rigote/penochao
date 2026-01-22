@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { ThemeProvider } from '@/app/context/theme-provider'
 import { ThemeToggle } from '@/app/components/theme-toggle'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
           <div className="relative">
             <ThemeToggle />
             {children}
+            <Toaster />
           </div>
         </ThemeProvider>
       </body>
