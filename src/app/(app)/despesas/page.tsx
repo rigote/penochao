@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { expenses, categories } from "@/db/schema/finance"
-import { eq, and, desc, or, gte, lte, sql } from "drizzle-orm"
+import { eq, and, desc, or, gte, lte, sql, isNull } from "drizzle-orm"
 import { DespesasClient } from "./despesas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 
@@ -62,6 +62,7 @@ async function getExpenses(userId: string, date: Date, page: number, type?: Expe
       categoryId: expenses.categoryId,
       categoryName: categories.name,
       categoryIcon: categories.icon,
+      categoryColor: categories.color,
       createdAt: expenses.createdAt,
     })
     .from(expenses)
@@ -127,10 +128,15 @@ async function getExpenseStats(userId: string, date: Date) {
   }
 }
 
-async function getExpenseCategories() {
+async function getExpenseCategories(userId: string) {
+  const baseCondition = and(
+    or(isNull(categories.userId), eq(categories.userId, userId)),
+    eq(categories.archived, false)
+  )
+
   const [essential, nonEssential] = await Promise.all([
-    db.select().from(categories).where(eq(categories.type, "essential")).orderBy(categories.name),
-    db.select().from(categories).where(eq(categories.type, "non_essential")).orderBy(categories.name)
+    db.select().from(categories).where(and(baseCondition, eq(categories.type, "essential"))).orderBy(categories.name),
+    db.select().from(categories).where(and(baseCondition, eq(categories.type, "non_essential"))).orderBy(categories.name)
   ])
 
   return { essential, nonEssential }
@@ -163,7 +169,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const [expensesData, stats, categoriesData] = await Promise.all([
     getExpenses(user.id, currentMonth, page, type),
     getExpenseStats(user.id, currentMonth),
-    getExpenseCategories(),
+    getExpenseCategories(user.id),
   ])
 
   return (

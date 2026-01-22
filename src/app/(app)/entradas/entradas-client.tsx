@@ -52,7 +52,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/app/components/ui/pagination"
-import { Plus, Pencil, Trash2, ArrowUpCircle, ChevronRight } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowUpCircle, ChevronRight, Sparkles, TrendingUp } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -65,13 +65,16 @@ interface Income {
   categoryId: string | null
   categoryName: string | null
   categoryIcon: string | null
+  categoryColor: string | null
 }
 
 interface Category {
   id: string
   name: string
   type: string
+  parentId: string | null
   icon: string | null
+  color: string | null
 }
 
 interface PaginationData {
@@ -296,11 +299,17 @@ export function EntradasClient({
       {/* Header with Month Selector */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <ArrowUpCircle className="w-8 h-8 text-green-500" />
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-green-500" />
+            <span className="text-sm font-medium text-green-600">Receitas</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+              <ArrowUpCircle className="w-5 h-5 text-white" />
+            </div>
             Entradas
           </h1>
-          <p className="text-muted-foreground">Gerencie suas fontes de renda</p>
+          <p className="text-muted-foreground mt-1">Gerencie suas fontes de renda</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -323,7 +332,7 @@ export function EntradasClient({
               if (!open) resetForm()
             }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 shadow-sm">
+                <Button className="gap-2 shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Nova Entrada</span>
                   <span className="sm:hidden">Nova</span>
@@ -388,14 +397,31 @@ export function EntradasClient({
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-zinc-900 border shadow-xl z-[60]">
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              <span className="flex items-center gap-2">
-                                <span>{cat.icon}</span>
-                                <span>{cat.name}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
+                          {categories
+                            .filter(c => c.type === "income" && !c.parentId)
+                            .map((root) => (
+                              <div key={root.id}>
+                                <SelectItem value={root.id}>
+                                  <span className="flex items-center gap-2">
+                                    <span style={{ color: root.color || undefined }}>{root.icon}</span>
+                                    <span className="font-semibold">{root.name}</span>
+                                  </span>
+                                </SelectItem>
+                                {categories
+                                  .filter(c => c.parentId === root.id)
+                                  .map((sub) => (
+                                    <SelectItem key={sub.id} value={sub.id}>
+                                      <span className="flex items-center gap-2 pl-4">
+                                        <span className="text-muted-foreground/50">↳</span>
+                                        <span style={{ color: sub.color || undefined }}>{sub.icon}</span>
+                                        <span>{sub.name}</span>
+                                      </span>
+                                    </SelectItem>
+                                  ))
+                                }
+                              </div>
+                            ))
+                          }
                         </SelectContent>
                       </Select>
                     </div>
@@ -432,17 +458,25 @@ export function EntradasClient({
       </div>
 
       {/* Summary Card */}
-      <Card className="border-l-4 border-l-green-500 shadow-sm bg-gradient-to-r from-background to-green-50/10 dark:to-green-950/10">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Entradas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-4xl font-bold text-green-600 tracking-tight">
-            {formatCurrency(stats.total)}
+      <Card variant="elevated" className="relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+        <CardContent className="relative pt-6 pb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Total de Entradas</p>
+              <div className="text-3xl md:text-4xl font-bold text-green-600 tracking-tight">
+                {formatCurrency(stats.total)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 capitalize">
+                Referente a {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+              </p>
+            </div>
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25">
+                <TrendingUp className="w-7 h-7 text-white" />
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Referente a {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
-          </p>
         </CardContent>
       </Card>
 
@@ -498,8 +532,20 @@ export function EntradasClient({
                         <TableCell className="font-medium">{income.description}</TableCell>
                         <TableCell>
                           {income.categoryName ? (
-                            <Badge variant="secondary" className="font-normal gap-1">
-                              {income.categoryIcon} {income.categoryName}
+                            <Badge
+                              variant="secondary"
+                              className="font-normal gap-1 transition-all"
+                              style={{
+                                backgroundColor: income.categoryColor ? `${income.categoryColor}20` : undefined,
+                                color: income.categoryColor || undefined
+                              }}
+                            >
+                              {income.categoryIcon && (
+                                <span style={{ color: income.categoryColor || undefined }}>
+                                  {income.categoryIcon}
+                                </span>
+                              )}
+                              {income.categoryName}
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -559,7 +605,13 @@ export function EntradasClient({
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="p-1.5 rounded-full bg-green-100 text-green-600">
+                            <div
+                              className="p-1.5 rounded-full flex items-center justify-center"
+                              style={{
+                                backgroundColor: income.categoryColor ? `${income.categoryColor}20` : '#dcfce7',
+                                color: income.categoryColor || '#16a34a'
+                              }}
+                            >
                               {income.categoryIcon ? <span className="text-xs">{income.categoryIcon}</span> : <ArrowUpCircle className="w-3.5 h-3.5" />}
                             </div>
                             <h4 className="font-semibold text-sm line-clamp-1">{income.description}</h4>

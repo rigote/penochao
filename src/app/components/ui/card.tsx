@@ -1,15 +1,65 @@
 import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+const cardVariants = cva(
+  "flex flex-col gap-6 rounded-xl border py-6 transition-all duration-300",
+  {
+    variants: {
+      variant: {
+        default: "bg-card text-card-foreground shadow-soft",
+        glass: "glass text-card-foreground shadow-soft",
+        elevated: "bg-card text-card-foreground shadow-elevated hover:-translate-y-0.5",
+        gradient: "border-0 text-white shadow-lg",
+      },
+      intent: {
+        default: "",
+        success: "border-l-4 border-l-green-500 dark:border-l-green-400",
+        warning: "border-l-4 border-l-amber-500 dark:border-l-amber-400",
+        danger: "border-l-4 border-l-red-500 dark:border-l-red-400",
+        primary: "border-l-4 border-l-primary",
+        info: "border-l-4 border-l-blue-500 dark:border-l-blue-400",
+      },
+      interactive: {
+        true: "cursor-pointer hover:-translate-y-1 hover:shadow-elevated active:translate-y-0 active:shadow-soft",
+        false: "",
+      },
+    },
+    compoundVariants: [
+      {
+        variant: "gradient",
+        intent: "default",
+        className: "gradient-primary",
+      },
+      {
+        variant: "gradient",
+        intent: "success",
+        className: "gradient-success border-l-0",
+      },
+      {
+        variant: "gradient",
+        intent: "danger",
+        className: "gradient-danger border-l-0",
+      },
+    ],
+    defaultVariants: {
+      variant: "default",
+      intent: "default",
+      interactive: false,
+    },
+  }
+)
+
+interface CardProps
+  extends React.ComponentProps<"div">,
+  VariantProps<typeof cardVariants> { }
+
+function Card({ className, variant, intent, interactive, ...props }: CardProps) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
-        className
-      )}
+      className={cn(cardVariants({ variant, intent, interactive, className }))}
       {...props}
     />
   )
@@ -32,7 +82,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("leading-none font-semibold tracking-tight", className)}
       {...props}
     />
   )
@@ -89,4 +139,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  cardVariants,
 }

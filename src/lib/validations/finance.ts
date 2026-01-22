@@ -4,9 +4,15 @@ import { z } from "zod"
 export const categoryTypeSchema = z.enum(["income", "essential", "non_essential"])
 
 export const createCategorySchema = z.object({
+  parentId: z.string().uuid().optional().nullable(),
   name: z.string().min(1, "Nome é obrigatório"),
   type: categoryTypeSchema,
   icon: z.string().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida").optional(),
+})
+
+export const updateCategorySchema = createCategorySchema.partial().extend({
+  archived: z.boolean().optional(),
 })
 
 // Income schemas

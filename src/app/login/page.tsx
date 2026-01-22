@@ -46,17 +46,7 @@ export default function LoginPage() {
               Digite seu e-mail abaixo para fazer login na sua conta
             </p>
           </div>
-          <UserAuthForm onSubmit={async (data) => {
-            try {
-              await signIn("email", { 
-                email: data.email,
-                redirect: true,
-                callbackUrl: "/dashboard"
-              })
-            } catch (error) {
-              console.error("Error during sign in:", error)
-            }
-          }} />
+          <UserAuthForm />
           <p className="px-8 text-center text-sm text-muted-foreground">
             Ao clicar em continuar, você concorda com nossos{" "}
             <Link

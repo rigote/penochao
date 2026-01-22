@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { incomes, categories } from "@/db/schema/finance"
-import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm"
+import { eq, desc, and, or, gte, lte, sql, isNull } from "drizzle-orm"
 import { EntradasClient } from "./entradas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 
@@ -52,6 +52,7 @@ async function getIncomes(userId: string, date: Date, page: number) {
       categoryId: incomes.categoryId,
       categoryName: categories.name,
       categoryIcon: categories.icon,
+      categoryColor: categories.color,
       createdAt: incomes.createdAt,
     })
     .from(incomes)
@@ -102,11 +103,17 @@ async function getIncomeStats(userId: string, date: Date) {
   return { total }
 }
 
-async function getIncomeCategories() {
+async function getIncomeCategories(userId: string) {
   const allCategories = await db
     .select()
     .from(categories)
-    .where(eq(categories.type, "income"))
+    .where(
+      and(
+        eq(categories.type, "income"),
+        or(isNull(categories.userId), eq(categories.userId, userId)),
+        eq(categories.archived, false)
+      )
+    )
     .orderBy(categories.name)
 
   return allCategories
@@ -137,7 +144,7 @@ export default async function EntradasPage({ searchParams }: PageProps) {
   const [incomesData, stats, categoriesData] = await Promise.all([
     getIncomes(user.id, currentMonth, page),
     getIncomeStats(user.id, currentMonth),
-    getIncomeCategories(),
+    getIncomeCategories(user.id),
   ])
 
   return (

@@ -1,11 +1,15 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
-import { PiggyBank } from "lucide-react"
+import { PiggyBank, Sparkles } from "lucide-react"
 import { Separator } from "@/app/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
 import { UserMenu } from "./components/user-menu"
 import { MobileNav } from "./components/mobile-nav"
+import { QuickAdd } from "@/app/components/shared/quick-add"
 import { redirect } from "next/navigation"
+import { db } from "@/db"
+import { categories } from "@/db/schema/finance"
+import { eq, or, isNull, and } from "drizzle-orm"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -15,10 +19,40 @@ const navItems = [
   { href: "/configuracoes", label: "Configurações", icon: "Settings" },
 ]
 
+async function getAllCategories(userId: string) {
+  const allCategories = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      type: categories.type,
+      parentId: categories.parentId,
+      icon: categories.icon,
+      color: categories.color,
+    })
+    .from(categories)
+    .where(
+      and(
+        or(isNull(categories.userId), eq(categories.userId, userId)),
+        eq(categories.archived, false)
+      )
+    )
+    .orderBy(categories.name)
+
+  return allCategories
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession()
 
   if (!session?.user) {
+    redirect("/login")
+  }
+
+  const dbUser = await db.query.users.findFirst({
+    where: (users, { eq }) => eq(users.email, session.user!.email!),
+  })
+
+  if (!dbUser) {
     redirect("/login")
   }
 
@@ -28,6 +62,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     image: session.user.image || null,
   }
 
+  const allCategories = await getAllCategories(dbUser.id)
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -35,23 +71,35 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 border-r bg-background">
-          <div className="flex flex-col h-full">
+        <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 border-r bg-gradient-to-b from-background to-muted/30">
+          {/* Subtle pattern overlay */}
+          <div className="absolute inset-0 pattern-dots opacity-30 pointer-events-none" />
+
+          <div className="relative flex flex-col h-full">
+            {/* Logo Area */}
             <div className="p-6">
-              <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-                <PiggyBank className="h-8 w-8 text-primary" />
-                <span>Penochão</span>
+              <Link href="/dashboard" className="flex items-center gap-3 group">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors" />
+                  <div className="relative bg-gradient-to-br from-primary to-primary/80 p-2 rounded-xl shadow-lg">
+                    <PiggyBank className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-xl text-gradient">Penochão</span>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Controle Financeiro
+                  </p>
+                </div>
               </Link>
-              <p className="text-xs text-muted-foreground mt-1">
-                Controle Financeiro Pessoal
-              </p>
             </div>
 
-            <Separator />
+            <Separator className="opacity-50" />
 
             <SidebarNav navItems={navItems} />
 
-            <Separator />
+            <Separator className="opacity-50" />
 
             <UserMenu user={user} />
           </div>
@@ -59,11 +107,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* Main Content */}
         <main className="flex-1 lg:pl-72">
-          <div className="container py-6 px-4 lg:px-8 max-w-6xl">
+          <div className="container py-8 px-4 lg:px-8 max-w-6xl">
             {children}
           </div>
         </main>
       </div>
+
+      {/* Quick Add FAB */}
+      <QuickAdd categories={allCategories} />
     </div>
   )
 }

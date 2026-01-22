@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
 import { Separator } from "@/app/components/ui/separator"
-import { Settings as SettingsIcon, Save, PiggyBank } from "lucide-react"
+import { Settings as SettingsIcon, Save, PiggyBank, Sparkles, ChevronRight, Target, Shield, FolderTree } from "lucide-react"
 
 interface UserSettings {
   emergencyFundMonths: string
@@ -67,29 +67,39 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <SettingsIcon className="w-8 h-8 text-gray-500" />
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <span className="text-sm font-medium text-primary">Preferências</span>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
+            <SettingsIcon className="w-5 h-5 text-primary-foreground" />
+          </div>
           Configurações
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mt-1">
           Personalize suas metas financeiras
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Emergency Fund Card */}
-        <Card>
+        <Card variant="elevated">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PiggyBank className="h-5 w-5 text-blue-500" />
-              Reserva de Emergência
-            </CardTitle>
-            <CardDescription>
-              Configure suas metas de reserva de emergência
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>Reserva de Emergência</CardTitle>
+                <CardDescription>
+                  Configure suas metas de reserva de emergência
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -152,20 +162,54 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
               </p>
             </div>
 
-            <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm">
-                <strong>Sua reserva atual:</strong>{" "}
-                <span className="text-blue-600">
-                  {formatCurrency(settings.currentSavings)}
-                </span>
-              </p>
+            <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 border border-blue-100 dark:border-blue-900/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                  <PiggyBank className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Sua reserva atual</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {formatCurrency(settings.currentSavings)}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Categories Card */}
+        <Card
+          variant="elevated"
+          interactive
+          onClick={() => router.push("/configuracoes/categorias")}
+          className="cursor-pointer group"
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <FolderTree className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle>Categorias</CardTitle>
+                  <CardDescription>
+                    Gerencie suas categorias de despesas e receitas
+                  </CardDescription>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+            </div>
+          </CardHeader>
+        </Card>
+
         {/* Save Button */}
         <div className="flex items-center gap-4">
-          <Button type="submit" disabled={saving} className="gap-2">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+          >
             <Save className="w-4 h-4" />
             {saving ? "Salvando..." : "Salvar Configurações"}
           </Button>

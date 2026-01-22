@@ -2,8 +2,10 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { NextAuthOptions } from "next-auth"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
-import EmailProvider from "next-auth/providers/email"
+import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/db"
+import { verificationTokens, users } from "@/db/schema/auth"
+import { eq, and, gt } from "drizzle-orm"
 import { html, text } from "./auth-email-templates"
 
 export const authOptions: NextAuthOptions = {
@@ -20,35 +22,64 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER,
-      from: process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || "onboarding@resend.dev",
-      sendVerificationRequest: async ({ identifier, url, provider }) => {
-        const { host } = new URL(url)
-        // If RESEND_API_KEY is present, use Resend SDK
-        if (process.env.RESEND_API_KEY) {
-          const { Resend } = await import("resend")
-          const resend = new Resend(process.env.RESEND_API_KEY)
-
-          try {
-            await resend.emails.send({
-              from: provider.from,
-              to: identifier,
-              subject: `Login para ${host}`,
-              text: text({ url, host }),
-              html: html({ url, host }),
-            })
-          } catch (error) {
-            console.error("Resend error:", error)
-            throw new Error("Failed to send verification email")
-          }
-        } else {
-          // Fallback to default behavior (SMTP) if no Resend API Key
-          // Note: NextAuth doesn't export the default sendVerificationRequest easily, 
-          // usually we'd rely on 'server' config. But here we primarily want Resend.
-          throw new Error("Missing RESEND_API_KEY")
-        }
+    CredentialsProvider({
+      name: "OTP",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        code: { label: "Code", type: "text" }
       },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.code) return null
+
+        const { email, code } = credentials
+
+        // Verify token
+        const [tokenRecord] = await db
+          .select()
+          .from(verificationTokens)
+          .where(
+            and(
+              eq(verificationTokens.identifier, email),
+              eq(verificationTokens.token, code),
+              gt(verificationTokens.expires, new Date())
+            )
+          )
+
+        if (!tokenRecord) return null
+
+        // Delete used token
+        await db
+          .delete(verificationTokens)
+          .where(
+            and(
+              eq(verificationTokens.identifier, email),
+              eq(verificationTokens.token, code)
+            )
+          )
+
+        // Find or create user
+        let [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+
+        if (!existingUser) {
+          const [newUser] = await db.insert(users).values({
+            id: crypto.randomUUID(),
+            email: email,
+            name: email.split("@")[0],
+            emailVerified: new Date(),
+          }).returning()
+          existingUser = newUser
+        }
+
+        return {
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email,
+          image: existingUser.image,
+        }
+      }
     }),
   ],
   callbacks: {

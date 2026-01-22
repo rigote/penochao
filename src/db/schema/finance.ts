@@ -34,12 +34,21 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
 // Categories table
 export const categories = pgTable("category", {
   id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }), // Nullable for system defaults
+  parentId: uuid("parent_id"), // Self-reference for subcategories
   name: text("name").notNull(),
   type: categoryTypeEnum("type").notNull(),
   icon: text("icon"),
+  color: text("color"), // Hex code
   isDefault: boolean("is_default").default(false),
+  archived: boolean("archived").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-})
+}, (table) => ({
+  parentReference: {
+    columns: [table.parentId],
+    foreignColumns: [table.id],
+  }
+}))
 
 // Incomes table
 export const incomes = pgTable("income", {
@@ -110,9 +119,18 @@ export const userSettings = pgTable("user_setting", {
 })
 
 // Relations
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
   incomes: many(incomes),
   expenses: many(expenses),
+  // Hierarchy relations
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+    relationName: "category_hierarchy",
+  }),
+  subcategories: many(categories, {
+    relationName: "category_hierarchy",
+  }),
 }))
 
 export const incomesRelations = relations(incomes, ({ one }) => ({
