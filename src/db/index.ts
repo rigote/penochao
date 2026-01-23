@@ -7,10 +7,11 @@ dotenv.config({ path: ".env.local" })
 import * as authSchema from './schema/auth'
 import * as financeSchema from './schema/finance'
 import * as aiLogsSchema from './schema/ai-logs'
+import * as couponsSchema from './schema/coupons'
 
 neonConfig.fetchConnectionCache = true
 
-const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema }
+const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema, ...couponsSchema }
 
 const sql = neon(process.env.DATABASE_URL!)
 export const db = drizzle(sql, { schema })
@@ -19,4 +20,4 @@ export const db = drizzle(sql, { schema })
 export type DbClient = typeof db
 
 // Re-export schemas
-export { authSchema, financeSchema, aiLogsSchema } 
+export { authSchema, financeSchema, aiLogsSchema, couponsSchema } 

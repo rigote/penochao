@@ -5,7 +5,8 @@ import { getServerSession } from "next-auth";
 import { db } from "@/db";
 import { aiUsageLogs } from "@/db/schema/ai-logs";
 import { invoices } from "@/db/schema/finance";
-import { sql, gte, and, lt, eq, count } from "drizzle-orm";
+import { couponRedemptions } from "@/db/schema/coupons";
+import { sql, gte, and, lt, eq, count, desc } from "drizzle-orm";
 
 // Budget configuration
 const MONTHLY_BUDGET_BRL = 20.00;
@@ -61,24 +62,44 @@ export async function POST(req: NextRequest) {
     const endOfMonth = new Date(startOfMonth);
     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
 
-    if (user.plan === "free") {
-      const [usage] = await db
-        .select({ count: count() })
-        .from(invoices)
-        .where(
-          and(
-            eq(invoices.userId, user.id),
-            gte(invoices.createdAt, startOfMonth),
-            lt(invoices.createdAt, endOfMonth)
-          )
-        );
+    // Get current month usage
+    const [usage] = await db
+      .select({ count: count() })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.userId, user.id),
+          gte(invoices.createdAt, startOfMonth),
+          lt(invoices.createdAt, endOfMonth)
+        )
+      );
 
+    if (user.plan === "free") {
       if (usage.count >= FREE_PLAN_MONTHLY_LIMIT) {
         return NextResponse.json(
           { error: `Limite de ${FREE_PLAN_MONTHLY_LIMIT} faturas mensais atingido. Faça upgrade para o plano Pro.` },
           { status: 429 }
         );
       }
+    } else if (user.plan === "pro") {
+      // Check if user has an active courtesy redemption with invoice limit
+      const activeCourtesy = await db.query.couponRedemptions.findFirst({
+        where: and(
+          eq(couponRedemptions.userId, user.id),
+          gte(couponRedemptions.courtesyExpiresAt, new Date())
+        ),
+        orderBy: [desc(couponRedemptions.redeemedAt)],
+      });
+
+      if (activeCourtesy?.invoiceLimit) {
+        if (usage.count >= activeCourtesy.invoiceLimit) {
+          return NextResponse.json(
+            { error: `Limite de ${activeCourtesy.invoiceLimit} faturas mensais atingido para seu cupom de cortesia.` },
+            { status: 429 }
+          );
+        }
+      }
+      // If no courtesy limit or no active courtesy, Pro users have unlimited
     }
 
     const formData = await req.formData();

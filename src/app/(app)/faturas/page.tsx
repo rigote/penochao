@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { invoices } from "@/db/schema/finance"
-import { count, eq, and, gte, lt } from "drizzle-orm"
+import { couponRedemptions } from "@/db/schema/coupons"
+import { count, eq, and, gte, lt, desc } from "drizzle-orm"
 import { FaturasClient } from "./faturas-client"
 
 export default async function FaturasPage() {
@@ -43,9 +44,32 @@ export default async function FaturasPage() {
       )
     );
 
+  // Check for active courtesy with invoice limit
+  let invoiceLimit: number | null = null;
+  let courtesyExpiresAt: Date | null = null;
+
+  if (user.plan === "pro") {
+    const activeCourtesy = await db.query.couponRedemptions.findFirst({
+      where: and(
+        eq(couponRedemptions.userId, user.id),
+        gte(couponRedemptions.courtesyExpiresAt, new Date())
+      ),
+      orderBy: [desc(couponRedemptions.redeemedAt)],
+    });
+
+    if (activeCourtesy?.invoiceLimit) {
+      invoiceLimit = activeCourtesy.invoiceLimit;
+      courtesyExpiresAt = activeCourtesy.courtesyExpiresAt;
+    }
+  } else if (user.plan === "free") {
+    invoiceLimit = 3; // Free plan limit
+  }
+
   return <FaturasClient
     categories={categories}
     userPlan={user.plan as "free" | "pro"}
     monthlyUsage={usage.count}
+    invoiceLimit={invoiceLimit}
+    courtesyExpiresAt={courtesyExpiresAt?.toISOString() || null}
   />
 }

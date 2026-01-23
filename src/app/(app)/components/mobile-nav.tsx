@@ -76,7 +76,20 @@ export function MobileNav({ navItems, user }: { navItems: NavItem[], user: User 
             <span className="font-bold text-lg">Penochão</span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme toggle */}
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="h-9 w-9"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
+            )}
+
             {/* User avatar */}
             <Link href="/perfil" className="block">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center ring-1 ring-border">

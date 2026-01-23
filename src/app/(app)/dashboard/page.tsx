@@ -99,13 +99,17 @@ async function getDashboardData(userId: string, currentDate: Date) {
     .where(eq(expenses.userId, userId))
 
   // Calculate streak (consecutive months with positive balance)
+  // Only count months that have actual data (income or expenses > 0)
   let streak = 0
   for (let i = historicalData.length - 1; i >= 0; i--) {
-    if (historicalData[i].saldo >= 0) {
+    const hasData = historicalData[i].entradas > 0 || historicalData[i].despesas > 0
+    if (hasData && historicalData[i].saldo > 0) {
       streak++
-    } else {
+    } else if (hasData) {
+      // Has data but negative balance, break streak
       break
     }
+    // If no data, skip this month (don't count it either way)
   }
 
   const totalIncomes = currentMonthData.incomes
@@ -164,6 +168,8 @@ async function getDashboardData(userId: string, currentDate: Date) {
         totalTransactions: Number(incomeCount.count) + Number(expenseCount.count),
         emergencyFundProgress: Math.min(emergencyFundProgress, 100),
         savingsRate: totalIncomes > 0 ? (monthlyBalance / totalIncomes) * 100 : 0,
+        hasCurrentMonthData: totalIncomes > 0 || totalExpenses > 0,
+        isCurrentMonthPositive: monthlyBalance > 0,
       }),
     },
   }
@@ -174,6 +180,8 @@ interface AchievementInput {
   totalTransactions: number
   emergencyFundProgress: number
   savingsRate: number
+  hasCurrentMonthData: boolean
+  isCurrentMonthPositive: boolean
 }
 
 interface Achievement {
@@ -220,7 +228,7 @@ function calculateAchievements(input: AchievementInput): Achievement[] {
       title: "Mês Positivo",
       description: "Termine o mês no azul",
       icon: "💚",
-      unlocked: input.streak >= 1,
+      unlocked: input.hasCurrentMonthData && input.isCurrentMonthPositive,
     },
     {
       id: "streak_3",
@@ -228,7 +236,7 @@ function calculateAchievements(input: AchievementInput): Achievement[] {
       description: "3 meses consecutivos no positivo",
       icon: "🔥",
       unlocked: input.streak >= 3,
-      progress: Math.min(input.streak, 3),
+      progress: input.streak,
       target: 3,
     },
     {
@@ -237,7 +245,7 @@ function calculateAchievements(input: AchievementInput): Achievement[] {
       description: "6 meses consecutivos no positivo",
       icon: "⚡",
       unlocked: input.streak >= 6,
-      progress: Math.min(input.streak, 6),
+      progress: input.streak,
       target: 6,
     },
     {
@@ -272,8 +280,8 @@ function calculateAchievements(input: AchievementInput): Achievement[] {
       title: "Poupador",
       description: "Economizar 20% ou mais da renda",
       icon: "💰",
-      unlocked: input.savingsRate >= 20,
-      progress: Math.round(input.savingsRate),
+      unlocked: input.hasCurrentMonthData && input.savingsRate >= 20,
+      progress: input.hasCurrentMonthData ? Math.max(0, Math.round(input.savingsRate)) : 0,
       target: 20,
     },
   ]

@@ -4,7 +4,8 @@ import Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
-import { eq } from "drizzle-orm"
+import { coupons, couponRedemptions } from "@/db/schema/coupons"
+import { eq, sql } from "drizzle-orm"
 
 // Helper to safely convert Unix timestamp to Date
 function safeTimestampToDate(timestamp: number | undefined | null): Date | null {
@@ -81,6 +82,34 @@ export async function POST(request: NextRequest) {
               .where(eq(users.id, userId))
             
             console.log(`User ${userId} upgraded to Pro`)
+
+            // Register coupon usage if coupon was used
+            const couponId = session.metadata?.couponId
+            if (couponId) {
+              // Check if coupon exists and record redemption
+              const coupon = await db.query.coupons.findFirst({
+                where: eq(coupons.id, couponId),
+              })
+              
+              if (coupon) {
+                await db.insert(couponRedemptions).values({
+                  couponId: coupon.id,
+                  userId,
+                  stripeSessionId: session.id,
+                })
+
+                // Increment usage count
+                await db
+                  .update(coupons)
+                  .set({
+                    usedCount: sql`${coupons.usedCount} + 1`,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(coupons.id, coupon.id))
+
+                console.log(`Coupon ${coupon.code} used by user ${userId}`)
+              }
+            }
           } else {
             console.error("checkout.session.completed: No userId found", { 
               sessionId: session.id, 

@@ -30,10 +30,20 @@ import {
   Headphones,
   Shield,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Ticket,
+  Gift
 } from "lucide-react"
+import { Input } from "@/app/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+interface CourtesyInfo {
+  expiresAt: string
+  invoiceLimit: number | null
+  couponCode: string | null
+  redeemedAt: string
+}
 
 interface SubscriptionInfo {
   plan: "free" | "pro"
@@ -42,6 +52,7 @@ interface SubscriptionInfo {
   stripeCurrentPeriodEnd: Date | null
   subscriptionStartDate: Date | null
   cancelAtPeriodEnd: boolean
+  courtesyInfo: CourtesyInfo | null
 }
 
 interface AssinaturaClientProps {
@@ -57,11 +68,27 @@ const proFeatures = [
   { icon: Sparkles, text: "Acesso antecipado", description: "Novidades antes de todo mundo" },
 ]
 
+interface CouponInfo {
+  id: string
+  code: string
+  type: "discount" | "courtesy"
+  discountPercent: number | null
+  courtesyDays: number | null
+  description: string | null
+}
+
 export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
   const router = useRouter()
   const [loadingPortal, setLoadingPortal] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState<"monthly" | "annual" | null>(null)
   const [loadingCancel, setLoadingCancel] = useState(false)
+  
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("")
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [validCoupon, setValidCoupon] = useState<CouponInfo | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [redeemingCoupon, setRedeemingCoupon] = useState(false)
 
   // Calculate if within guarantee period (7 days)
   const daysActive = subscriptionInfo.subscriptionStartDate
@@ -69,6 +96,74 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
     : 0
   const isWithinGuarantee = daysActive <= 7
   const daysRemaining = Math.max(0, 7 - daysActive)
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Digite um código de cupom")
+      return
+    }
+
+    setValidatingCoupon(true)
+    setCouponError(null)
+    setValidCoupon(null)
+
+    try {
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (data.valid) {
+        setValidCoupon(data.coupon)
+        toast.success("Cupom válido!", {
+          description: data.coupon.type === "courtesy"
+            ? `${data.coupon.courtesyDays} dias de Pro grátis`
+            : `${data.coupon.discountPercent}% de desconto`,
+        })
+      } else {
+        setCouponError(data.error || "Cupom inválido")
+      }
+    } catch (error) {
+      setCouponError("Erro ao validar cupom")
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const handleRedeemCourtesy = async () => {
+    if (!validCoupon || validCoupon.type !== "courtesy") return
+
+    setRedeemingCoupon(true)
+    try {
+      const response = await fetch("/api/coupons/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: validCoupon.code }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message)
+        router.refresh()
+      } else {
+        toast.error(data.error || "Erro ao resgatar cupom")
+      }
+    } catch (error) {
+      toast.error("Erro ao resgatar cupom")
+    } finally {
+      setRedeemingCoupon(false)
+    }
+  }
+
+  const clearCoupon = () => {
+    setCouponCode("")
+    setValidCoupon(null)
+    setCouponError(null)
+  }
 
   const handleManageSubscription = async () => {
     setLoadingPortal(true)
@@ -101,7 +196,10 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ 
+          priceId,
+          couponCode: validCoupon?.type === "discount" ? validCoupon.code : null,
+        }),
       })
       const data = await response.json()
       
@@ -249,8 +347,69 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                 </>
               )}
               
-              {/* Manual upgrade notice - no Stripe subscription */}
-              {!subscriptionInfo.stripeSubscriptionId && (
+              {/* Courtesy plan info */}
+              {!subscriptionInfo.stripeSubscriptionId && subscriptionInfo.courtesyInfo && (
+                <div className="rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-4 border border-purple-500/20 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Gift className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">Plano Cortesia</p>
+                        {subscriptionInfo.courtesyInfo.couponCode && (
+                          <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">
+                            {subscriptionInfo.courtesyInfo.couponCode}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Acesso Pro gratuito até{" "}
+                        <strong>{format(new Date(subscriptionInfo.courtesyInfo.expiresAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</strong>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Days remaining */}
+                  {(() => {
+                    const daysLeft = differenceInDays(new Date(subscriptionInfo.courtesyInfo.expiresAt), new Date())
+                    const totalDays = differenceInDays(new Date(subscriptionInfo.courtesyInfo.expiresAt), new Date(subscriptionInfo.courtesyInfo.redeemedAt))
+                    const progress = Math.max(0, Math.min(100, ((totalDays - daysLeft) / totalDays) * 100))
+                    
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Tempo restante</span>
+                          <span className={cn(
+                            "font-medium",
+                            daysLeft <= 3 ? "text-red-500" : daysLeft <= 7 ? "text-amber-500" : "text-green-500"
+                          )}>
+                            {daysLeft} {daysLeft === 1 ? "dia" : "dias"}
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              daysLeft <= 3 ? "bg-red-500" : daysLeft <= 7 ? "bg-amber-500" : "bg-gradient-to-r from-purple-500 to-blue-500"
+                            )}
+                            style={{ width: `${100 - progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Invoice limit if applicable */}
+                  {subscriptionInfo.courtesyInfo.invoiceLimit && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Limite: {subscriptionInfo.courtesyInfo.invoiceLimit} faturas IA por mês</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Manual upgrade without courtesy info */}
+              {!subscriptionInfo.stripeSubscriptionId && !subscriptionInfo.courtesyInfo && (
                 <div className="rounded-xl bg-muted/50 p-4 border flex items-start gap-3">
                   <Crown className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                   <div>
@@ -380,9 +539,99 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
             </div>
           </div>
 
+          {/* Coupon Section */}
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Ticket className="w-5 h-5" />
+                Tem um cupom?
+              </CardTitle>
+              <CardDescription>
+                Insira seu código de desconto ou cortesia
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Digite o código"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase())
+                    setCouponError(null)
+                  }}
+                  className="uppercase"
+                  disabled={!!validCoupon}
+                />
+                {validCoupon ? (
+                  <Button variant="outline" onClick={clearCoupon}>
+                    Limpar
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleValidateCoupon}
+                    disabled={validatingCoupon || !couponCode.trim()}
+                  >
+                    {validatingCoupon ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Aplicar"
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {couponError && (
+                <p className="text-sm text-destructive">{couponError}</p>
+              )}
+
+              {validCoupon && (
+                <div className="rounded-lg bg-green-500/10 border border-green-500/30 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                      {validCoupon.type === "courtesy" ? (
+                        <Gift className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Ticket className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-green-600">
+                        Cupom {validCoupon.code} aplicado!
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {validCoupon.type === "courtesy"
+                          ? `${validCoupon.courtesyDays} dias de Plano Pro grátis`
+                          : `${validCoupon.discountPercent}% de desconto na assinatura`}
+                      </p>
+                      
+                      {validCoupon.type === "courtesy" && (
+                        <Button
+                          className="mt-3 gap-2"
+                          onClick={handleRedeemCourtesy}
+                          disabled={redeemingCoupon}
+                        >
+                          {redeemingCoupon ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Gift className="w-4 h-4" />
+                          )}
+                          Ativar Pro Grátis
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Pricing Cards */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Escolha seu plano</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {validCoupon?.type === "discount" 
+                ? `Escolha seu plano (${validCoupon.discountPercent}% de desconto)`
+                : "Escolha seu plano"}
+            </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               {/* Monthly */}
               <Card variant="elevated" className="relative">

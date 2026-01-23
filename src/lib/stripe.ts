@@ -73,11 +73,13 @@ export async function createCheckoutSession(
   userId: string,
   email: string,
   priceId: string,
-  name?: string | null
+  name?: string | null,
+  stripeCouponId?: string | null,
+  internalCouponId?: string | null
 ): Promise<string> {
   const customerId = await createOrRetrieveCustomer(userId, email, name)
 
-  const session = await stripe.checkout.sessions.create({
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
@@ -96,16 +98,52 @@ export async function createCheckoutSession(
     },
     metadata: {
       userId,
+      couponId: internalCouponId || "",
     },
-  })
+  }
+
+  // Apply discount if Stripe coupon provided
+  if (stripeCouponId) {
+    sessionParams.discounts = [
+      {
+        coupon: stripeCouponId,
+      },
+    ]
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams)
 
   return session.url!
+}
+
+// Create or retrieve a Stripe coupon for our internal coupon
+export async function getOrCreateStripeCoupon(
+  internalCouponId: string,
+  discountPercent: number
+): Promise<string> {
+  // Use a consistent ID based on our internal coupon
+  const stripeCouponId = `penochao_${internalCouponId.substring(0, 8)}`
+  
+  try {
+    // Try to retrieve existing coupon
+    const existingCoupon = await stripe.coupons.retrieve(stripeCouponId)
+    return existingCoupon.id
+  } catch {
+    // Coupon doesn't exist, create it
+    const coupon = await stripe.coupons.create({
+      id: stripeCouponId,
+      percent_off: discountPercent,
+      duration: "once",
+      name: `Desconto ${discountPercent}%`,
+    })
+    return coupon.id
+  }
 }
 
 export async function createPortalSession(customerId: string): Promise<string> {
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${process.env.NEXTAUTH_URL}/configuracoes`,
+    return_url: `${process.env.NEXTAUTH_URL}/assinatura`,
   })
 
   return session.url

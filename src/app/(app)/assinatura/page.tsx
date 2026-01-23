@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
+import { couponRedemptions, coupons } from "@/db/schema/coupons"
+import { eq, and, gte, desc } from "drizzle-orm"
 import { stripe } from "@/lib/stripe"
 import { AssinaturaClient } from "./assinatura-client"
 
@@ -33,6 +35,34 @@ export default async function AssinaturaPage() {
     }
   }
 
+  // Check for active courtesy
+  let courtesyInfo: {
+    expiresAt: string
+    invoiceLimit: number | null
+    couponCode: string | null
+    redeemedAt: string
+  } | null = null
+
+  const activeCourtesy = await db.query.couponRedemptions.findFirst({
+    where: and(
+      eq(couponRedemptions.userId, user.id),
+      gte(couponRedemptions.courtesyExpiresAt, new Date())
+    ),
+    orderBy: [desc(couponRedemptions.redeemedAt)],
+    with: {
+      coupon: true,
+    },
+  })
+
+  if (activeCourtesy?.courtesyExpiresAt) {
+    courtesyInfo = {
+      expiresAt: activeCourtesy.courtesyExpiresAt.toISOString(),
+      invoiceLimit: activeCourtesy.invoiceLimit,
+      couponCode: activeCourtesy.coupon?.code || null,
+      redeemedAt: activeCourtesy.redeemedAt.toISOString(),
+    }
+  }
+
   const subscriptionInfo = {
     plan: user.plan as "free" | "pro",
     stripeCustomerId: user.stripeCustomerId,
@@ -40,6 +70,7 @@ export default async function AssinaturaPage() {
     stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd,
     subscriptionStartDate,
     cancelAtPeriodEnd,
+    courtesyInfo,
   }
 
   return <AssinaturaClient subscriptionInfo={subscriptionInfo} />

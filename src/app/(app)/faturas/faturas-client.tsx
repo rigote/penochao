@@ -71,9 +71,11 @@ interface FaturasClientProps {
   categories: Category[]
   userPlan: "free" | "pro"
   monthlyUsage: number
+  invoiceLimit: number | null
+  courtesyExpiresAt: string | null
 }
 
-export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasClientProps) {
+export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit, courtesyExpiresAt }: FaturasClientProps) {
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -82,8 +84,11 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
 
   // Track local usage to prevent unlimited uploads in same session without refresh
   const [currentUsage, setCurrentUsage] = useState(monthlyUsage)
-  const FREE_LIMIT = 3
-  const isLimitReached = userPlan === "free" && currentUsage >= FREE_LIMIT
+  
+  // Determine the effective limit
+  const effectiveLimit = invoiceLimit // null means unlimited
+  const hasLimit = effectiveLimit !== null
+  const isLimitReached = hasLimit && currentUsage >= effectiveLimit
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -107,13 +112,15 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
 
   const handleFiles = async (files: FileList) => {
     // Check Limit
-    if (userPlan === "free" && (currentUsage + files.length) > FREE_LIMIT) {
-      toast.error(`Limite de uploads atingido! (${currentUsage}/${FREE_LIMIT})`, {
-        description: "Faça o upgrade para o plano Pro para uploads ilimitados.",
-        action: {
+    if (hasLimit && (currentUsage + files.length) > effectiveLimit) {
+      toast.error(`Limite de uploads atingido! (${currentUsage}/${effectiveLimit})`, {
+        description: userPlan === "free" 
+          ? "Faça o upgrade para o plano Pro para uploads ilimitados."
+          : "Você atingiu o limite do seu cupom de cortesia.",
+        action: userPlan === "free" ? {
           label: "Ver Planos",
-          onClick: () => toast.dismiss() // TODO: Redirect to pricing
-        }
+          onClick: () => window.location.href = "/assinatura"
+        } : undefined
       })
       return
     }
@@ -271,32 +278,71 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
         </p>
       </div>
 
-      {/* Usage Progress - Only for Free Plan */}
-      {userPlan === "free" && (
-        <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 dark:border-orange-900/30">
+      {/* Usage Progress - Show for users with limits */}
+      {hasLimit && (
+        <Card className={`${userPlan === "free" 
+          ? "border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 dark:border-orange-900/30" 
+          : "border-blue-200 bg-blue-50/50 dark:bg-blue-950/10 dark:border-blue-900/30"}`}>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full text-orange-600">
+            <div className={`p-2 rounded-full ${userPlan === "free" 
+              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-600" 
+              : "bg-blue-100 dark:bg-blue-900/30 text-blue-600"}`}>
               <AlertCircle className="w-5 h-5" />
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium text-orange-800 dark:text-orange-200">
-                  Uso do Plano Gratuito
+                <span className={`font-medium ${userPlan === "free" 
+                  ? "text-orange-800 dark:text-orange-200" 
+                  : "text-blue-800 dark:text-blue-200"}`}>
+                  {userPlan === "free" ? "Uso do Plano Gratuito" : "Limite do Cupom de Cortesia"}
                 </span>
                 <span className="text-muted-foreground">
-                  {currentUsage} de {FREE_LIMIT} envios
+                  {currentUsage} de {effectiveLimit} faturas
                 </span>
               </div>
-              <div className="h-2 w-full bg-orange-200 dark:bg-orange-950/30 rounded-full overflow-hidden">
+              <div className={`h-2 w-full rounded-full overflow-hidden ${userPlan === "free" 
+                ? "bg-orange-200 dark:bg-orange-950/30" 
+                : "bg-blue-200 dark:bg-blue-950/30"}`}>
                 <div
-                  className="h-full bg-orange-500 transition-all duration-500"
-                  style={{ width: `${Math.min((currentUsage / FREE_LIMIT) * 100, 100)}%` }}
+                  className={`h-full transition-all duration-500 ${userPlan === "free" ? "bg-orange-500" : "bg-blue-500"}`}
+                  style={{ width: `${Math.min((currentUsage / effectiveLimit) * 100, 100)}%` }}
                 />
               </div>
+              {courtesyExpiresAt && (
+                <p className="text-xs text-muted-foreground">
+                  Cortesia válida até {new Date(courtesyExpiresAt).toLocaleDateString("pt-BR")}
+                </p>
+              )}
             </div>
-            <Button size="sm" variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-100 hover:text-orange-800 hidden sm:flex">
-              Fazer Upgrade
-            </Button>
+            {userPlan === "free" && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-orange-200 text-orange-700 hover:bg-orange-100 hover:text-orange-800 hidden sm:flex"
+                onClick={() => window.location.href = "/assinatura"}
+              >
+                Fazer Upgrade
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Unlimited message for Pro without limit */}
+      {userPlan === "pro" && !hasLimit && (
+        <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/10 dark:border-green-900/30">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-600">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium text-green-800 dark:text-green-200">
+                Plano Pro - Faturas Ilimitadas
+              </span>
+              <p className="text-sm text-muted-foreground">
+                Você já processou {currentUsage} {currentUsage === 1 ? "fatura" : "faturas"} este mês
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -383,7 +429,9 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
                 </h3>
                 <p className="text-muted-foreground">
                   {isLimitReached
-                    ? "Você atingiu o limite gratuito de envios. Libere o poder ilimitado da IA com o plano Pro."
+                    ? userPlan === "free"
+                      ? "Você atingiu o limite gratuito de envios. Libere o poder ilimitado da IA com o plano Pro."
+                      : "Você atingiu o limite do seu cupom de cortesia para este mês."
                     : "Suportamos faturas em PDF (Nubank, C6, etc). Nossa IA extrai tudo automaticamente."
                   }
                 </p>
