@@ -17,6 +17,7 @@ export const users = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  plan: text("plan").default("free").notNull(), // 'free' or 'pro'
 })
 
 export const accounts = pgTable(

@@ -306,5 +306,5 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const data = await getDashboardData(user.id, currentMonthDate)
 
-  return <DashboardClient data={data} currentMonth={currentMonthDate} userName={user.name} />
+  return <DashboardClient data={data} currentMonth={currentMonthDate} userName={user.name} userPlan={user.plan as "free" | "pro"} />
 }

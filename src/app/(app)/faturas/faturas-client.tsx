@@ -30,7 +30,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -67,14 +68,21 @@ interface Category {
 
 interface FaturasClientProps {
   categories: Category[]
+  userPlan: "free" | "pro"
+  monthlyUsage: number
 }
 
-export function FaturasClient({ categories }: FaturasClientProps) {
+export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasClientProps) {
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [savingAll, setSavingAll] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
+
+  // Track local usage to prevent unlimited uploads in same session without refresh
+  const [currentUsage, setCurrentUsage] = useState(monthlyUsage)
+  const FREE_LIMIT = 3
+  const isLimitReached = userPlan === "free" && currentUsage >= FREE_LIMIT
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -94,9 +102,21 @@ export function FaturasClient({ categories }: FaturasClientProps) {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files)
     }
-  }, [])
+  }, [currentUsage, userPlan]) // Add dependencies
 
   const handleFiles = async (files: FileList) => {
+    // Check Limit
+    if (userPlan === "free" && (currentUsage + files.length) > FREE_LIMIT) {
+      toast.error(`Limite de uploads atingido! (${currentUsage}/${FREE_LIMIT})`, {
+        description: "Faça o upgrade para o plano Pro para uploads ilimitados.",
+        action: {
+          label: "Ver Planos",
+          onClick: () => toast.dismiss() // TODO: Redirect to pricing
+        }
+      })
+      return
+    }
+
     const pdfFiles = Array.from(files).filter(file => file.type === "application/pdf")
 
     if (pdfFiles.length === 0) {
@@ -122,6 +142,8 @@ export function FaturasClient({ categories }: FaturasClientProps) {
         }
 
         const { data } = await response.json()
+
+        setCurrentUsage(prev => prev + 1) // Increment usage tracking
 
         const newInvoice: Invoice = {
           id: Date.now().toString() + Math.random(),
@@ -286,18 +308,32 @@ export function FaturasClient({ categories }: FaturasClientProps) {
           ) : (
             <div className="space-y-6 pointer-events-none transition-all duration-300 group-hover:scale-105">
               <div className="p-6 bg-purple-100 dark:bg-purple-900/30 rounded-full shadow-lg inline-block mb-2 group-hover:shadow-purple-500/20 transition-all">
-                <Upload className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                {isLimitReached ? (
+                  <Lock className="h-10 w-10 text-gray-500" />
+                ) : (
+                  <Upload className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                )}
               </div>
               <div>
                 <h3 className="text-2xl font-semibold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                  Solte suas faturas aqui
+                  {isLimitReached ? "Limite Gratuito Atingido" : "Solte suas faturas aqui"}
                 </h3>
                 <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
-                  Suportamos múltiplos arquivos PDF. Arraste ou clique para selecionar.
+                  {isLimitReached
+                    ? `Você atingiu o limite de ${FREE_LIMIT} envios mensais. Faça upgrade para continuar.`
+                    : "Suportamos múltiplos arquivos PDF. Arraste ou clique para selecionar."
+                  }
                 </p>
               </div>
-              <Button size="lg" className="mt-4 pointer-events-auto relative z-20 rounded-full px-8 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 bg-purple-600 hover:bg-purple-700 transition-all">
-                Selecionar Arquivos
+              <Button
+                size="lg"
+                disabled={isLimitReached}
+                className={isLimitReached
+                  ? "mt-4 pointer-events-auto relative z-20 rounded-full px-8 bg-gray-400"
+                  : "mt-4 pointer-events-auto relative z-20 rounded-full px-8 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 bg-purple-600 hover:bg-purple-700 transition-all"
+                }
+              >
+                {isLimitReached ? "Desbloquear Ilimitado" : "Selecionar Arquivos"}
               </Button>
             </div>
           )}

@@ -97,8 +97,63 @@ const formatCompactCurrency = (value: number) => {
   return formatCurrency(value)
 }
 
-export function DashboardClient({ data, currentMonth, userName }: { data: DashboardData, currentMonth: Date, userName: string | null }) {
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
+import { toast } from "sonner"
+import { FileDown } from "lucide-react"
+
+// ... imports remain the same
+
+export function DashboardClient({ data, currentMonth, userName, userPlan }: { data: DashboardData, currentMonth: Date, userName: string | null, userPlan: "free" | "pro" }) {
   const [showAllAchievements, setShowAllAchievements] = useState(false)
+
+  const handleExport = () => {
+    if (userPlan === "free") {
+      toast.error("Funcionalidade disponível apenas no plano Pro")
+      return
+    }
+
+    const doc = new jsPDF()
+
+    // Header
+    doc.setFontSize(20)
+    doc.text("Relatório Mensal - Penochão", 14, 22)
+    doc.setFontSize(10)
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30)
+    doc.text(`Referência: ${format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}`, 14, 35)
+
+    // Summary Table
+    autoTable(doc, {
+      startY: 45,
+      head: [['Resumo Financeiro', 'Valor']],
+      body: [
+        ['Total de Entradas', formatCurrency(data.totalIncomes)],
+        ['Despesas Essenciais', formatCurrency(data.totalEssential)],
+        ['Despesas Não Essenciais', formatCurrency(data.totalNonEssential)],
+        ['Total de Despesas', formatCurrency(data.totalExpenses)],
+        ['Saldo Final', formatCurrency(data.monthlyBalance)],
+        ['Reserva de Emergência', `${data.emergencyFund.progress.toFixed(1)}% (${formatCurrency(data.emergencyFund.current)})`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [124, 58, 237] }, // Purple
+    })
+
+    // Evolution Table
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 15,
+      head: [['Mês', 'Entradas', 'Despesas', 'Saldo']],
+      body: data.historicalData.map(d => [
+        d.name,
+        formatCurrency(d.entradas),
+        formatCurrency(d.despesas),
+        formatCurrency(d.saldo)
+      ]),
+      theme: 'striped',
+    })
+
+    doc.save(`relatorio-penochao-${format(currentMonth, "MM-yyyy")}.pdf`)
+    toast.success("Relatório exportado com sucesso!")
+  }
 
   const isPositiveBalance = data.monthlyBalance >= 0
   const savingsRate = data.totalIncomes > 0
@@ -195,6 +250,18 @@ export function DashboardClient({ data, currentMonth, userName }: { data: Dashbo
             Despesa
           </Button>
         </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExport}
+          className={cn(
+            "w-full sm:w-auto gap-1.5 transition-all text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 dark:border-purple-800 dark:hover:bg-purple-950/30",
+            userPlan === "free" && "opacity-70"
+          )}
+        >
+          {userPlan === "free" ? <Lock className="w-3.5 h-3.5" /> : <FileDown className="w-3.5 h-3.5" />}
+          Exportar
+        </Button>
       </div>
 
       {/* Main Balance Card */}
@@ -286,7 +353,21 @@ export function DashboardClient({ data, currentMonth, userName }: { data: Dashbo
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
+            {userPlan === "free" && (
+              <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-center p-4">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <Lock className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-lg">Histórico Completo</h3>
+                <p className="text-sm text-muted-foreground max-w-[200px] mb-4">
+                  Desbloqueie o histórico de 6 meses no plano Pro.
+                </p>
+                <Button size="sm" className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 transition-opacity">
+                  Ser Pro
+                </Button>
+              </div>
+            )}
             <SimpleBarChart
               data={data.historicalData}
               bars={[
