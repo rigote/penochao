@@ -25,7 +25,8 @@ import {
   Lock,
   ChevronDown,
   ChevronUp,
-  BarChart3
+  BarChart3,
+  Plus
 } from "lucide-react"
 import { MonthSelector } from "@/app/components/shared/month-selector"
 import { format } from "date-fns"
@@ -172,6 +173,30 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
         </div>
       </div>
 
+      {/* Quick Action Buttons */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <Link href="/entradas" className="contents sm:block">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Entrada
+          </Button>
+        </Link>
+        <Link href="/despesas" className="contents sm:block">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:hover:bg-rose-950/30"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Despesa
+          </Button>
+        </Link>
+      </div>
+
       {/* Main Balance Card */}
       <Card variant="elevated" className="relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -184,7 +209,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
               <p className="text-sm font-medium text-muted-foreground mb-2">
                 Saldo do mês
               </p>
-              <div className={`text-3xl md:text-4xl font-bold tracking-tight ${isPositiveBalance ? "text-green-600" : "text-red-600"}`}>
+              <div className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${isPositiveBalance ? "text-green-600" : "text-red-600"}`}>
                 {isPositiveBalance ? "+" : ""}{formatCurrency(data.monthlyBalance)}
               </div>
 
@@ -223,7 +248,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
                     <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Entradas</p>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(data.totalIncomes)}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 truncate">{formatCurrency(data.totalIncomes)}</p>
                 </div>
               </Link>
 
@@ -236,7 +261,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
                     <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-red-600 group-hover:translate-x-1 transition-all" />
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Despesas</p>
-                  <p className="text-2xl font-bold text-red-600">{formatCurrency(data.totalExpenses)}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 truncate">{formatCurrency(data.totalExpenses)}</p>
                 </div>
               </Link>
             </div>
@@ -349,7 +374,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-xl sm:text-2xl font-bold text-orange-600 truncate">
               {formatCurrency(data.totalEssential)}
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -374,7 +399,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 truncate">
               {formatCurrency(data.totalNonEssential)}
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -399,7 +424,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
             </div>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isPositiveBalance ? "text-emerald-600" : "text-red-600"}`}>
+            <div className={`text-xl sm:text-2xl font-bold truncate ${isPositiveBalance ? "text-emerald-600" : "text-red-600"}`}>
               {isPositiveBalance ? "+" : ""}{formatCurrency(data.monthlyBalance)}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
@@ -419,7 +444,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">
               {data.emergencyFund.progress.toFixed(0)}%
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -595,37 +620,7 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card variant="glass">
-        <CardContent className="py-4">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/entradas">
-              <Button variant="ghost" className="gap-2">
-                <ArrowUpCircle className="w-4 h-4 text-green-600" />
-                Ver Entradas
-              </Button>
-            </Link>
-            <Link href="/despesas">
-              <Button variant="ghost" className="gap-2">
-                <ArrowDownCircle className="w-4 h-4 text-red-600" />
-                Ver Despesas
-              </Button>
-            </Link>
-            <Link href="/faturas">
-              <Button variant="ghost" className="gap-2">
-                <Zap className="w-4 h-4 text-primary" />
-                Upload de Faturas
-              </Button>
-            </Link>
-            <Link href="/configuracoes">
-              <Button variant="ghost" className="gap-2">
-                <Target className="w-4 h-4 text-blue-600" />
-                Configurações
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }

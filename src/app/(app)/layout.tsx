@@ -5,11 +5,8 @@ import { Separator } from "@/app/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
 import { UserMenu } from "./components/user-menu"
 import { MobileNav } from "./components/mobile-nav"
-import { QuickAdd } from "@/app/components/shared/quick-add"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { categories } from "@/db/schema/finance"
-import { eq, or, isNull, and } from "drizzle-orm"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -19,27 +16,7 @@ const navItems = [
   { href: "/configuracoes", label: "Configurações", icon: "Settings" },
 ]
 
-async function getAllCategories(userId: string) {
-  const allCategories = await db
-    .select({
-      id: categories.id,
-      name: categories.name,
-      type: categories.type,
-      parentId: categories.parentId,
-      icon: categories.icon,
-      color: categories.color,
-    })
-    .from(categories)
-    .where(
-      and(
-        or(isNull(categories.userId), eq(categories.userId, userId)),
-        eq(categories.archived, false)
-      )
-    )
-    .orderBy(categories.name)
 
-  return allCategories
-}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession()
@@ -62,7 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     image: session.user.image || null,
   }
 
-  const allCategories = await getAllCategories(dbUser.id)
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,9 +89,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
-
-      {/* Quick Add FAB */}
-      <QuickAdd categories={allCategories} />
     </div>
   )
 }

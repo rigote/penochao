@@ -8,6 +8,7 @@ import {
   ArrowDownCircle,
   FileText,
   Settings,
+  LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +18,7 @@ interface NavItem {
   icon: string
 }
 
-const iconMap = {
+const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   ArrowUpCircle,
   ArrowDownCircle,
@@ -25,53 +26,70 @@ const iconMap = {
   Settings,
 }
 
+// Clean accent colors for each menu item
+const accentColors: Record<string, { accent: string; bg: string }> = {
+  "/dashboard": { accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
+  "/entradas": { accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+  "/despesas": { accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-500/10" },
+  "/faturas": { accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
+  "/configuracoes": { accent: "text-slate-600 dark:text-slate-400", bg: "bg-slate-500/10" },
+}
+
 export function SidebarNav({ navItems }: { navItems: NavItem[] }) {
   const pathname = usePathname()
 
   return (
-    <nav className="flex-1 px-4 py-4 space-y-1.5">
-      {navItems.map((item) => {
-        const Icon = iconMap[item.icon as keyof typeof iconMap]
-        const isActive = pathname === item.href
+    <nav className="flex-1 px-3 py-4">
+      <div className="space-y-1">
+        {navItems.map((item) => {
+          const Icon = iconMap[item.icon]
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const colors = accentColors[item.href] || accentColors["/dashboard"]
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
-              isActive
-                ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            )}
-          >
-            {/* Active indicator glow */}
-            {isActive && (
-              <span className="absolute inset-0 rounded-xl bg-primary/20 blur-lg -z-10" />
-            )}
-
-            {/* Icon with animation */}
-            {Icon && (
-              <Icon
-                className={cn(
-                  "h-5 w-5 transition-all duration-200",
-                  isActive
-                    ? "drop-shadow-sm"
-                    : "group-hover:scale-110 group-hover:text-primary"
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                isActive
+                  ? `${colors.bg} ${colors.accent}`
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              {/* Icon */}
+              <div className={cn(
+                "flex items-center justify-center w-8 h-8 rounded-md transition-colors",
+                isActive ? colors.bg : "group-hover:bg-accent"
+              )}>
+                {Icon && (
+                  <Icon
+                    className={cn(
+                      "h-[18px] w-[18px] transition-colors",
+                      isActive ? colors.accent : "text-muted-foreground group-hover:text-foreground"
+                    )}
+                  />
                 )}
-              />
-            )}
+              </div>
 
-            {/* Label */}
-            <span className="font-medium">{item.label}</span>
+              {/* Label */}
+              <span>{item.label}</span>
 
-            {/* Hover indicator */}
-            {!isActive && (
-              <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-            )}
-          </Link>
-        )
-      })}
+              {/* Active indicator */}
+              {isActive && (
+                <span className={cn(
+                  "ml-auto w-1.5 h-1.5 rounded-full",
+                  colors.accent.includes("violet") ? "bg-violet-500" :
+                    colors.accent.includes("emerald") ? "bg-emerald-500" :
+                      colors.accent.includes("rose") ? "bg-rose-500" :
+                        colors.accent.includes("blue") ? "bg-blue-500" :
+                          "bg-slate-500"
+                )} />
+              )}
+            </Link>
+          )
+        })}
+      </div>
     </nav>
   )
 }
