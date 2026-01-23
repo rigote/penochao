@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useTheme } from "next-themes"
+import { useSession } from "next-auth/react"
 import { Button } from "@/app/components/ui/button"
-import { Menu, X, PiggyBank, Moon, Sun } from "lucide-react"
+import { Menu, X, PiggyBank, Moon, Sun, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
@@ -18,6 +20,9 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { data: session, status } = useSession()
+  
+  const isLoggedIn = status === "authenticated" && session?.user
 
   useEffect(() => {
     setMounted(true)
@@ -77,12 +82,43 @@ export function Header() {
                 <span className="sr-only">Alternar tema</span>
               </Button>
             )}
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Entrar</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/login">Começar grátis</Link>
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <Link href="/dashboard" className="flex items-center gap-2 group">
+                  {session.user.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name || "Usuário"}
+                      width={32}
+                      height={32}
+                      className="rounded-full ring-2 ring-transparent group-hover:ring-primary/50 transition-all"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                      {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    {session.user.name?.split(" ")[0] || "Usuário"}
+                  </span>
+                </Link>
+                <Button size="sm" asChild>
+                  <Link href="/dashboard" className="gap-2">
+                    <LayoutDashboard className="w-4 h-4" />
+                    Acessar Dashboard
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login">Entrar</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/login">Começar grátis</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -128,12 +164,44 @@ export function Header() {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/login">Entrar</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/login">Começar grátis</Link>
-                </Button>
+                {isLoggedIn ? (
+                  <>
+                    <div className="flex items-center gap-3 py-2">
+                      {session.user.image ? (
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || "Usuário"}
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-base font-medium text-primary">
+                          {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{session.user.name || "Usuário"}</span>
+                        <span className="text-xs text-muted-foreground">{session.user.email}</span>
+                      </div>
+                    </div>
+                    <Button size="sm" asChild>
+                      <Link href="/dashboard" className="gap-2">
+                        <LayoutDashboard className="w-4 h-4" />
+                        Acessar Dashboard
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/login">Entrar</Link>
+                    </Button>
+                    <Button size="sm" asChild>
+                      <Link href="/login">Começar grátis</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

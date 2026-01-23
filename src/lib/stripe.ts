@@ -90,7 +90,7 @@ export async function createCheckoutSession(
       },
     ],
     success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
-    cancel_url: `${process.env.NEXTAUTH_URL}/precos?canceled=true`,
+    cancel_url: `${process.env.NEXTAUTH_URL}/assinatura?canceled=true`,
     subscription_data: {
       metadata: {
         userId,
