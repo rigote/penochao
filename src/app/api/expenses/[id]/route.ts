@@ -4,7 +4,7 @@ import { db } from "@/db"
 import { expenses } from "@/db/schema/finance"
 import { updateExpenseSchema } from "@/lib/validations/finance"
 import { eq, and } from "drizzle-orm"
-import { encrypt, decrypt, decryptNumber } from "@/lib/encryption"
+import { encrypt, decrypt, encryptNumber, decryptNumber } from "@/lib/encryption"
 
 type Params = { params: Promise<{ id: string }> }
 

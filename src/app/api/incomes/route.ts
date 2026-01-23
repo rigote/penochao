@@ -4,7 +4,7 @@ import { db } from "@/db"
 import { incomes, categories } from "@/db/schema/finance"
 import { createIncomeSchema } from "@/lib/validations/finance"
 import { eq, and, gte, lte, desc, SQL, inArray } from "drizzle-orm"
-import { encrypt, decrypt, decryptNumber } from "@/lib/encryption"
+import { encrypt, decrypt, encryptNumber, decryptNumber } from "@/lib/encryption"
 
 export async function GET(request: Request) {
   try {
