@@ -5,6 +5,7 @@ import { incomes, categories } from "@/db/schema/finance"
 import { eq, desc, and, or, gte, lte, sql, isNull } from "drizzle-orm"
 import { EntradasClient } from "./entradas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
+import { decrypt, decryptNumber } from "@/lib/encryption"
 
 const ITEMS_PER_PAGE = 10
 
@@ -63,7 +64,11 @@ async function getIncomes(userId: string, date: Date, page: number) {
     .offset(offset)
 
   return {
-    data,
+    data: data.map(i => ({
+      ...i,
+      description: decrypt(i.description),
+      amount: decryptNumber(i.amount),
+    })),
     pagination: {
       currentPage: page,
       totalPages,
@@ -99,7 +104,13 @@ async function getIncomeStats(userId: string, date: Date) {
       )
     )
 
-  const total = allMonthlyIncomes.reduce((acc, curr) => acc + Number(curr.amount), 0)
+  const total = allMonthlyIncomes.reduce((acc, curr) => {
+    try {
+      return acc + parseFloat(decryptNumber(curr.amount))
+    } catch {
+      return acc
+    }
+  }, 0)
   return { total }
 }
 

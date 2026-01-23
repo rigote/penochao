@@ -5,16 +5,16 @@ import { incomes, expenses, userSettings } from "@/db/schema/finance"
 import { eq, and, gte, lte, sql, count } from "drizzle-orm"
 import { DashboardClient } from "./dashboard-client"
 import { startOfMonth, endOfMonth, parse, format, subMonths } from "date-fns"
+import { decryptNumber } from "@/lib/encryption"
 
 async function getMonthData(userId: string, date: Date) {
   const startDate = format(startOfMonth(date), "yyyy-MM-dd")
   const endDate = format(endOfMonth(date), "yyyy-MM-dd")
 
-  // Get total incomes for the month
-  const [incomesResult] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${incomes.amount}), 0)`,
-    })
+  // Since amounts are encrypted, we need to fetch all records and decrypt them
+  // Get all incomes for the month
+  const allIncomes = await db
+    .select({ amount: incomes.amount })
     .from(incomes)
     .where(
       and(
@@ -24,11 +24,9 @@ async function getMonthData(userId: string, date: Date) {
       )
     )
 
-  // Get total essential expenses
-  const [essentialResult] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
-    })
+  // Get all essential expenses
+  const allEssentialExpenses = await db
+    .select({ amount: expenses.amount })
     .from(expenses)
     .where(
       and(
@@ -39,11 +37,9 @@ async function getMonthData(userId: string, date: Date) {
       )
     )
 
-  // Get total non-essential expenses
-  const [nonEssentialResult] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
-    })
+  // Get all non-essential expenses
+  const allNonEssentialExpenses = await db
+    .select({ amount: expenses.amount })
     .from(expenses)
     .where(
       and(
@@ -54,10 +50,35 @@ async function getMonthData(userId: string, date: Date) {
       )
     )
 
+  // Decrypt and sum amounts
+  const totalIncomes = allIncomes.reduce((sum, income) => {
+    try {
+      return sum + parseFloat(decryptNumber(income.amount))
+    } catch {
+      return sum
+    }
+  }, 0)
+
+  const totalEssential = allEssentialExpenses.reduce((sum, expense) => {
+    try {
+      return sum + parseFloat(decryptNumber(expense.amount))
+    } catch {
+      return sum
+    }
+  }, 0)
+
+  const totalNonEssential = allNonEssentialExpenses.reduce((sum, expense) => {
+    try {
+      return sum + parseFloat(decryptNumber(expense.amount))
+    } catch {
+      return sum
+    }
+  }, 0)
+
   return {
-    incomes: parseFloat(incomesResult.total),
-    essential: parseFloat(essentialResult.total),
-    nonEssential: parseFloat(nonEssentialResult.total),
+    incomes: totalIncomes,
+    essential: totalEssential,
+    nonEssential: totalNonEssential,
   }
 }
 

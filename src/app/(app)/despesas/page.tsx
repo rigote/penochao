@@ -5,6 +5,7 @@ import { expenses, categories } from "@/db/schema/finance"
 import { eq, and, desc, or, gte, lte, sql, isNull } from "drizzle-orm"
 import { DespesasClient } from "./despesas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
+import { decrypt, decryptNumber } from "@/lib/encryption"
 
 const ITEMS_PER_PAGE = 10
 
@@ -73,7 +74,12 @@ async function getExpenses(userId: string, date: Date, page: number, type?: Expe
     .offset(offset)
 
   return {
-    data: data.map(e => ({ ...e, type: e.type as ExpenseType })),
+    data: data.map(e => ({
+      ...e,
+      type: e.type as ExpenseType,
+      description: decrypt(e.description),
+      amount: decryptNumber(e.amount),
+    })),
     pagination: {
       currentPage: page,
       totalPages,
@@ -115,11 +121,23 @@ async function getExpenseStats(userId: string, date: Date) {
 
   const essential = allMonthlyExpenses
     .filter(e => e.type === "essential")
-    .reduce((acc, curr) => acc + Number(curr.amount), 0)
+    .reduce((acc, curr) => {
+      try {
+        return acc + parseFloat(decryptNumber(curr.amount))
+      } catch {
+        return acc
+      }
+    }, 0)
 
   const nonEssential = allMonthlyExpenses
     .filter(e => e.type === "non_essential")
-    .reduce((acc, curr) => acc + Number(curr.amount), 0)
+    .reduce((acc, curr) => {
+      try {
+        return acc + parseFloat(decryptNumber(curr.amount))
+      } catch {
+        return acc
+      }
+    }, 0)
 
   return {
     essential,
