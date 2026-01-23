@@ -8,6 +8,7 @@ import {
   ArrowDownCircle,
   FileText,
   Settings,
+  ShieldCheck,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,6 +25,7 @@ const iconMap: Record<string, LucideIcon> = {
   ArrowDownCircle,
   FileText,
   Settings,
+  ShieldCheck,
 }
 
 export function SidebarNav({ navItems }: { navItems: NavItem[] }) {

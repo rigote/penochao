@@ -10,6 +10,7 @@ import {
   ArrowDownCircle,
   FileText,
   Settings,
+  ShieldCheck,
   PiggyBank,
   LogOut,
   Menu,
@@ -44,6 +45,7 @@ const iconMap: Record<string, LucideIcon> = {
   ArrowDownCircle,
   FileText,
   Settings,
+  ShieldCheck,
 }
 
 // Clean accent colors removed

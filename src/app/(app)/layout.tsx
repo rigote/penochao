@@ -9,15 +9,13 @@ import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/entradas", label: "Entradas", icon: "ArrowUpCircle" },
   { href: "/despesas", label: "Despesas", icon: "ArrowDownCircle" },
   { href: "/faturas", label: "Upload de Faturas", icon: "FileText" },
   { href: "/configuracoes", label: "Configurações", icon: "Settings" },
 ]
-
-
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession()
@@ -40,7 +38,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     image: dbUser.image || null,
   }
 
+  const navItems = [...baseNavItems]
+  const ADMIN_EMAILS = ["matheus.rigote@gmail.com", "ipelabsapp@gmail.com"]
 
+  if (user.email && ADMIN_EMAILS.includes(user.email)) {
+    navItems.push({ href: "/admin", label: "Admin", icon: "ShieldCheck" })
+  }
 
   return (
     <div className="min-h-screen bg-background">
