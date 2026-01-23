@@ -7,17 +7,23 @@ import { users } from "@/db/schema/auth"
 import { coupons, couponRedemptions } from "@/db/schema/coupons"
 import { eq, sql } from "drizzle-orm"
 
-// Helper to safely convert Unix timestamp to Date
-function safeTimestampToDate(timestamp: number | undefined | null): Date | null {
-  if (!timestamp || typeof timestamp !== "number") return null
-  try {
-    const date = new Date(timestamp * 1000)
-    // Validate the date is valid
-    if (isNaN(date.getTime())) return null
-    return date
-  } catch {
-    return null
+// Helper to safely get current_period_end from subscription
+function getSubscriptionPeriodEnd(subscription: Stripe.Subscription | Stripe.Response<Stripe.Subscription>): Date | null {
+  // Cast to access the property regardless of type wrapper
+  const sub = subscription as unknown as Record<string, unknown>
+  
+  // Try direct access
+  if (typeof sub.current_period_end === "number") {
+    return new Date(sub.current_period_end * 1000)
   }
+  
+  // Try from items
+  const items = sub.items as { data?: Array<Record<string, unknown>> } | undefined
+  if (items?.data?.[0] && typeof items.data[0].current_period_end === "number") {
+    return new Date(items.data[0].current_period_end * 1000)
+  }
+  
+  return null
 }
 
 // Helper to find user by Stripe customer ID
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
           }
           
           if (userId) {
-            const periodEnd = safeTimestampToDate(subscription.current_period_end)
+            const periodEnd = getSubscriptionPeriodEnd(subscription)
             
             await db
               .update(users)
@@ -121,20 +127,27 @@ export async function POST(request: NextRequest) {
       }
 
       case "invoice.paid": {
-        const invoice = event.data.object as Stripe.Invoice
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any
         
-        if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(
-            invoice.subscription as string
-          )
+        // Get subscription ID - handle both string and object forms
+        const subscriptionId = typeof invoice.subscription === "string" 
+          ? invoice.subscription 
+          : invoice.subscription?.id
+        
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
           
-          let userId = subscription.metadata?.userId
-          if (!userId && invoice.customer) {
-            userId = await findUserByCustomerId(invoice.customer as string) || undefined
+          let userId: string | undefined = subscription.metadata?.userId
+          const customerId = typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id
+          if (!userId && customerId) {
+            userId = (await findUserByCustomerId(customerId)) || undefined
           }
           
           if (userId) {
-            const periodEnd = safeTimestampToDate(subscription.current_period_end)
+            const periodEnd = getSubscriptionPeriodEnd(subscription)
             
             await db
               .update(users)
@@ -152,17 +165,17 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription
         
-        let userId = subscription.metadata?.userId
+        let userId: string | undefined = subscription.metadata?.userId
         if (!userId) {
           const customer = typeof subscription.customer === "string" 
             ? subscription.customer 
             : subscription.customer?.id
-          userId = await findUserByCustomerId(customer || null) || undefined
+          userId = (await findUserByCustomerId(customer || null)) || undefined
         }
         
         if (userId) {
           const isActive = ["active", "trialing"].includes(subscription.status)
-          const periodEnd = safeTimestampToDate(subscription.current_period_end)
+          const periodEnd = getSubscriptionPeriodEnd(subscription)
           
           await db
             .update(users)
@@ -180,12 +193,12 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription
         
-        let userId = subscription.metadata?.userId
+        let userId: string | undefined = subscription.metadata?.userId
         if (!userId) {
           const customer = typeof subscription.customer === "string" 
             ? subscription.customer 
             : subscription.customer?.id
-          userId = await findUserByCustomerId(customer || null) || undefined
+          userId = (await findUserByCustomerId(customer || null)) || undefined
         }
         
         if (userId) {

@@ -4,8 +4,37 @@ import { stripe } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
 import { eq } from "drizzle-orm"
+import Stripe from "stripe"
 
 const GUARANTEE_DAYS = 7
+
+// Helper to safely get timestamp from subscription
+function getSubscriptionTimestamp(
+  subscription: Stripe.Subscription,
+  field: "start_date" | "current_period_end"
+): number {
+  // Try direct access first (older API versions)
+  const directValue = (subscription as unknown as Record<string, number>)[field]
+  if (typeof directValue === "number") {
+    return directValue
+  }
+  
+  // For current_period_end, try getting from items
+  if (field === "current_period_end" && subscription.items?.data?.[0]) {
+    const itemPeriodEnd = (subscription.items.data[0] as unknown as Record<string, number>).current_period_end
+    if (typeof itemPeriodEnd === "number") {
+      return itemPeriodEnd
+    }
+  }
+  
+  // Fallback to created timestamp for start_date
+  if (field === "start_date") {
+    return subscription.created
+  }
+  
+  // Fallback to 30 days from now for period end
+  return Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+}
 
 export async function POST() {
   try {
@@ -34,7 +63,8 @@ export async function POST() {
     const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
     
     // Calculate days since subscription started
-    const subscriptionStartDate = new Date(subscription.start_date * 1000)
+    const startTimestamp = getSubscriptionTimestamp(subscription, "start_date")
+    const subscriptionStartDate = new Date(startTimestamp * 1000)
     const now = new Date()
     const daysSinceStart = Math.floor(
       (now.getTime() - subscriptionStartDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -131,10 +161,11 @@ export async function POST() {
       })
 
       // User keeps Pro until period end
+      const periodEndTimestamp = getSubscriptionTimestamp(subscription, "current_period_end")
       return NextResponse.json({
         success: true,
         refunded: false,
-        cancelAt: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancelAt: new Date(periodEndTimestamp * 1000).toISOString(),
         message: "Assinatura será cancelada ao final do período atual.",
       })
     }

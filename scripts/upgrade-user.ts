@@ -35,13 +35,17 @@ async function syncUserSubscription(email: string) {
       const subscription = subscriptions.data[0]
       console.log(`Found active subscription: ${subscription.id}`)
       
+      // Get period end from the first subscription item
+      const periodEnd = subscription.items.data[0]?.current_period_end 
+        ?? Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // fallback to 30 days from now
+      
       await db
         .update(users)
         .set({
           plan: "pro",
           stripeSubscriptionId: subscription.id,
           stripePriceId: subscription.items.data[0].price.id,
-          stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          stripeCurrentPeriodEnd: new Date(periodEnd * 1000),
           updatedAt: new Date(),
         })
         .where(eq(users.id, user.id))
