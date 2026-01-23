@@ -2,7 +2,26 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Política de Privacidade - Penochão",
-  description: "Política de privacidade e proteção de dados do Penochão",
+  description: "Política de privacidade e proteção de dados do Penochão. Conformidade com LGPD. Saiba como protegemos seus dados financeiros.",
+  keywords: [
+    "política de privacidade penochão",
+    "LGPD",
+    "proteção de dados",
+    "privacidade financeira",
+    "segurança de dados",
+  ],
+  openGraph: {
+    title: "Política de Privacidade - Penochão",
+    description: "Política de privacidade e proteção de dados do Penochão. Conformidade com LGPD.",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://penochao.app.br/privacidade",
+  },
 }
 
 export default function PrivacidadePage() {

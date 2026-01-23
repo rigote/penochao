@@ -4,7 +4,27 @@ import { Check, Shield, Zap, HeartHandshake } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Preços - Penochão",
-  description: "Planos e preços do Penochão. Escolha o plano ideal para organizar suas finanças.",
+  description: "Planos e preços do Penochão. Escolha entre Free ou Pro. Plano Pro: R$ 19,90/mês ou R$ 190/ano com 20% de desconto. Garantia de 7 dias.",
+  keywords: [
+    "preços penochão",
+    "planos controle financeiro",
+    "assinatura pro",
+    "preço app financeiro",
+    "planos penochão",
+  ],
+  openGraph: {
+    title: "Preços - Penochão",
+    description: "Planos e preços do Penochão. Escolha o plano ideal para organizar suas finanças.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Preços - Penochão",
+    description: "Planos e preços do Penochão. Escolha o plano ideal para organizar suas finanças.",
+  },
+  alternates: {
+    canonical: "https://penochao.app.br/precos",
+  },
 }
 
 const guarantees = [

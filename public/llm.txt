@@ -1,0 +1,43 @@
+# Penochão
+
+> Controle financeiro inteligente com IA para pessoas físicas.
+
+## O que é o Penochão?
+
+Penochão é uma aplicação web de controle financeiro pessoal que usa inteligência artificial para automatizar a leitura de faturas e categorização de despesas.
+
+## Funcionalidades Principais
+
+- Leitura automática de faturas em PDF usando IA (Google Gemini)
+- Dashboard financeiro com gráficos e insights
+- Categorização automática de despesas (essenciais/não essenciais)
+- Acompanhamento de receitas e despesas
+- Meta de reserva de emergência
+- Sistema de conquistas/gamificação
+
+## Planos
+
+- Free: Grátis, até 3 faturas/mês com IA
+- Pro: R$ 19,90/mês ou R$ 190,00/ano, faturas ilimitadas
+
+## Tecnologias
+
+- Next.js 16 (App Router)
+- TypeScript
+- PostgreSQL (Neon)
+- Drizzle ORM
+- Stripe (pagamentos)
+- Google Gemini (IA para faturas)
+- Tailwind CSS + shadcn/ui
+
+## Contato
+
+- Website: https://penochao.app.br
+- Email: contato@penochao.app.br
+
+## Links
+
+- Página inicial: https://penochao.app.br
+- Preços: https://penochao.app.br/precos
+- Termos de uso: https://penochao.app.br/termos
+- Privacidade: https://penochao.app.br/privacidade

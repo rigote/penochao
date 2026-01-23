@@ -2,7 +2,25 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Termos de Uso - Penochão",
-  description: "Termos de uso e condições do Penochão",
+  description: "Termos de uso e condições do Penochão. Leia nossos termos de serviço, políticas de cancelamento e garantias.",
+  keywords: [
+    "termos de uso penochão",
+    "condições de uso",
+    "termos de serviço",
+    "política de cancelamento",
+  ],
+  openGraph: {
+    title: "Termos de Uso - Penochão",
+    description: "Termos de uso e condições do Penochão",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://penochao.app.br/termos",
+  },
 }
 
 export default function TermosPage() {
