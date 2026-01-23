@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { incomes } from "@/db/schema/finance"
 import { updateIncomeSchema } from "@/lib/validations/finance"
 import { eq, and } from "drizzle-orm"
+import { encrypt, decrypt, decryptNumber } from "@/lib/encryption"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -32,7 +33,14 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Entrada não encontrada" }, { status: 404 })
     }
 
-    return NextResponse.json(income)
+    // Decrypt sensitive fields
+    const decryptedIncome = {
+      ...income,
+      description: decrypt(income.description),
+      amount: decryptNumber(income.amount),
+    }
+
+    return NextResponse.json(decryptedIncome)
   } catch (error) {
     console.error("Error fetching income:", error)
     return NextResponse.json({ error: "Erro ao buscar entrada" }, { status: 500 })
@@ -58,13 +66,30 @@ export async function PUT(request: Request, { params }: Params) {
     const body = await request.json()
     const validatedData = updateIncomeSchema.parse(body)
 
+    // Prepare update data with encryption
+    const updateData: Partial<typeof incomes.$inferInsert> = {
+      updatedAt: new Date(),
+    }
+
+    if (validatedData.description !== undefined) {
+      updateData.description = encrypt(validatedData.description)
+    }
+    if (validatedData.amount !== undefined) {
+      updateData.amount = encryptNumber(validatedData.amount.toString())
+    }
+    if (validatedData.categoryId !== undefined) {
+      updateData.categoryId = validatedData.categoryId
+    }
+    if (validatedData.occurrenceDate !== undefined) {
+      updateData.occurrenceDate = validatedData.occurrenceDate
+    }
+    if (validatedData.recurrence !== undefined) {
+      updateData.recurrence = validatedData.recurrence
+    }
+
     const [updated] = await db
       .update(incomes)
-      .set({
-        ...validatedData,
-        amount: validatedData.amount?.toString(),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(incomes.id, id), eq(incomes.userId, user.id)))
       .returning()
 
@@ -72,7 +97,14 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Entrada não encontrada" }, { status: 404 })
     }
 
-    return NextResponse.json(updated)
+    // Decrypt before returning
+    const decryptedIncome = {
+      ...updated,
+      description: decrypt(updated.description),
+      amount: decryptNumber(updated.amount),
+    }
+
+    return NextResponse.json(decryptedIncome)
   } catch (error) {
     console.error("Error updating income:", error)
     return NextResponse.json({ error: "Erro ao atualizar entrada" }, { status: 500 })

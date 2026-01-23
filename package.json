@@ -19,6 +19,7 @@
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
     "db:check": "drizzle-kit check:pg",
+    "db:encrypt": "tsx scripts/encrypt-existing-data.ts",
     "email": "email dev --port 3001",
     "lint-staged": "lint-staged"
   },

@@ -58,7 +58,7 @@ export const incomes = pgTable("income", {
     .references(() => users.id, { onDelete: "cascade" }),
   categoryId: uuid("category_id").references(() => categories.id),
   description: text("description").notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: text("amount").notNull(), // Changed from decimal to text to support encryption
   occurrenceDate: date("occurrence_date").notNull(),
   recurrence: recurrenceEnum("recurrence").default("once"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

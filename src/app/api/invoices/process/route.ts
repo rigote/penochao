@@ -7,6 +7,7 @@ import { aiUsageLogs } from "@/db/schema/ai-logs";
 import { invoices } from "@/db/schema/finance";
 import { couponRedemptions } from "@/db/schema/coupons";
 import { sql, gte, and, lt, eq, count, desc } from "drizzle-orm";
+import { encryptJSON } from "@/lib/encryption";
 
 // Budget configuration
 const MONTHLY_BUDGET_BRL = 20.00;
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       fileName: file.name,
       fileUrl: "", // Not storing file, just tracking usage
-      extractedData: data,
+      extractedData: encryptJSON(data),
       status: "processed",
       processedAt: new Date(),
     });

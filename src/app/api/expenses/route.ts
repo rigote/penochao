@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { expenses, categories } from "@/db/schema/finance"
 import { createExpenseSchema } from "@/lib/validations/finance"
 import { eq, and, gte, lte, desc, inArray } from "drizzle-orm"
+import { encrypt, decrypt, decryptNumber } from "@/lib/encryption"
 
 export async function GET(request: Request) {
   try {
@@ -58,7 +59,14 @@ export async function GET(request: Request) {
       .where(and(...conditions))
       .orderBy(desc(expenses.occurrenceDate))
 
-    return NextResponse.json(allExpenses)
+    // Decrypt sensitive fields
+    const decryptedExpenses = allExpenses.map((expense) => ({
+      ...expense,
+      description: decrypt(expense.description),
+      amount: decryptNumber(expense.amount),
+    }))
+
+    return NextResponse.json(decryptedExpenses)
   } catch (error) {
     console.error("Error fetching expenses:", error)
     return NextResponse.json({ error: "Erro ao buscar despesas" }, { status: 500 })
@@ -142,15 +150,22 @@ export async function POST(request: Request) {
       .values({
         userId: user.id,
         categoryId: validatedData.categoryId,
-        description: validatedData.description,
-        amount: validatedData.amount.toString(),
+        description: encrypt(validatedData.description),
+        amount: encryptNumber(validatedData.amount.toString()),
         occurrenceDate: validatedData.occurrenceDate,
         type: validatedData.type,
         recurrence: validatedData.recurrence,
       })
       .returning()
 
-    return NextResponse.json(newExpense, { status: 201 })
+    // Decrypt before returning
+    const decryptedExpense = {
+      ...newExpense,
+      description: decrypt(newExpense.description),
+      amount: decryptNumber(newExpense.amount),
+    }
+
+    return NextResponse.json(decryptedExpense, { status: 201 })
   } catch (error) {
     console.error("Error creating expense:", error)
     return NextResponse.json({ error: "Erro ao criar despesa" }, { status: 500 })
