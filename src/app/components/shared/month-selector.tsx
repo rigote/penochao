@@ -24,6 +24,11 @@ interface MonthSelectorProps {
 export function MonthSelector({ className, userPlan = "free" }: MonthSelectorProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Get current date from URL or default to current month
   const currentMonthStr = searchParams.get("month")
@@ -78,38 +83,51 @@ export function MonthSelector({ className, userPlan = "free" }: MonthSelectorPro
         {userPlan === "free" ? <Lock className="h-3 w-3" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-[160px] justify-center text-center font-medium h-8 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition-all",
-              !date && "text-muted-foreground"
+      {mounted ? (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-[160px] justify-center text-center font-medium h-8 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition-all",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+              <span className="capitalize text-sm">
+                {format(date, "MMMM yyyy", { locale: ptBR })}
+              </span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleMonthChange}
+              initialFocus
+              locale={ptBR}
+              disabled={(day) => userPlan === "free" && !isSameMonth(day, today)}
+            />
+            {userPlan === "free" && (
+              <div className="p-3 bg-muted/30 border-t text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                <Lock className="w-3 h-3" />
+                <span>Navegação restrita ao plano Free</span>
+              </div>
             )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-            <span className="capitalize text-sm">
-              {format(date, "MMMM yyyy", { locale: ptBR })}
-            </span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="center">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleMonthChange}
-            initialFocus
-            locale={ptBR}
-            disabled={(day) => userPlan === "free" && !isSameMonth(day, today)}
-          />
-          {userPlan === "free" && (
-            <div className="p-3 bg-muted/30 border-t text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-              <Lock className="w-3 h-3" />
-              <span>Navegação restrita ao plano Free</span>
-            </div>
-          )}
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <Button
+          variant="ghost"
+          className="w-[160px] justify-center text-center font-medium h-8 rounded-lg"
+          disabled
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+          <span className="capitalize text-sm">
+            {format(date, "MMMM yyyy", { locale: ptBR })}
+          </span>
+        </Button>
+      )}
 
       <Button
         variant="ghost"

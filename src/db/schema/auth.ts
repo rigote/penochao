@@ -18,6 +18,11 @@ export const users = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   plan: text("plan").default("free").notNull(), // 'free' or 'pro'
+  // Stripe fields
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripePriceId: text("stripe_price_id"),
+  stripeCurrentPeriodEnd: timestamp("stripe_current_period_end", { mode: "date" }),
 })
 
 export const accounts = pgTable(

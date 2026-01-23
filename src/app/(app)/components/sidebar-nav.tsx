@@ -9,6 +9,7 @@ import {
   FileText,
   Settings,
   ShieldCheck,
+  Crown,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ const iconMap: Record<string, LucideIcon> = {
   FileText,
   Settings,
   ShieldCheck,
+  Crown,
 }
 
 export function SidebarNav({ navItems }: { navItems: NavItem[] }) {

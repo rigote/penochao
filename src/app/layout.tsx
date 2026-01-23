@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { ThemeProvider } from '@/app/context/theme-provider'
-import { ThemeToggle } from '@/app/components/theme-toggle'
+import { SessionProvider } from '@/app/context/session-provider'
 import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Next.js Boilerplate',
-  description: 'A modern Next.js boilerplate with all the tools you need for professional development.',
+  title: 'Penochão - Controle Financeiro Inteligente',
+  description: 'Organize suas finanças com facilidade. Dashboard completo, leitura de faturas com IA e muito mais.',
 }
 
 export default function RootLayout({
@@ -18,18 +18,17 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={GeistSans.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="relative">
-            <ThemeToggle />
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
             {children}
             <Toaster />
-          </div>
-        </ThemeProvider>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )

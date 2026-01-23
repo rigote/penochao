@@ -47,5 +47,18 @@ export default async function ConfiguracoesPage() {
 
   const settings = await getUserSettings(user.id)
 
-  return <ConfiguracoesClient initialSettings={settings} userPlan={user.plan as "free" | "pro"} />
+  const subscriptionInfo = {
+    plan: user.plan as "free" | "pro",
+    stripeCustomerId: user.stripeCustomerId,
+    stripeSubscriptionId: user.stripeSubscriptionId,
+    stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd,
+  }
+
+  return (
+    <ConfiguracoesClient 
+      initialSettings={settings} 
+      userPlan={user.plan as "free" | "pro"}
+      subscriptionInfo={subscriptionInfo}
+    />
+  )
 }

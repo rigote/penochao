@@ -15,6 +15,7 @@ const baseNavItems = [
   { href: "/despesas", label: "Despesas", icon: "ArrowDownCircle" },
   { href: "/faturas", label: "Upload de Faturas", icon: "FileText" },
   { href: "/configuracoes", label: "Configurações", icon: "Settings" },
+  { href: "/assinatura", label: "Meu Plano", icon: "Crown" },
 ]
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
