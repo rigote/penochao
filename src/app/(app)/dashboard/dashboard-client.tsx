@@ -101,11 +101,34 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import { toast } from "sonner"
 import { FileDown } from "lucide-react"
+import { QuickAdd } from "@/app/components/shared/quick-add"
 
-// ... imports remain the same
+interface Category {
+  id: string
+  name: string
+  type: string
+  parentId: string | null
+  icon: string | null
+  color: string | null
+}
 
-export function DashboardClient({ data, currentMonth, userName, userPlan }: { data: DashboardData, currentMonth: Date, userName: string | null, userPlan: "free" | "pro" }) {
+interface DashboardClientProps {
+  data: DashboardData
+  currentMonth: Date
+  userName: string | null
+  userPlan: "free" | "pro"
+  categories: Category[]
+}
+
+export function DashboardClient({ data, currentMonth, userName, userPlan, categories }: DashboardClientProps) {
   const [showAllAchievements, setShowAllAchievements] = useState(false)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
+  const [quickAddType, setQuickAddType] = useState<"income" | "expense">("income")
+
+  const handleOpenQuickAdd = (type: "income" | "expense") => {
+    setQuickAddType(type)
+    setQuickAddOpen(true)
+  }
 
   const handleExport = () => {
     if (userPlan === "free") {
@@ -198,7 +221,7 @@ export function DashboardClient({ data, currentMonth, userName, userPlan }: { da
         </div>
 
         <div className="flex items-center gap-3">
-          <MonthSelector />
+          <MonthSelector userPlan={userPlan} />
 
           {/* Streak Badge */}
           {data.gamification.streak > 0 && (
@@ -230,26 +253,24 @@ export function DashboardClient({ data, currentMonth, userName, userPlan }: { da
 
       {/* Quick Action Buttons */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-        <Link href="/entradas" className="contents sm:block">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full sm:w-auto gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Entrada
-          </Button>
-        </Link>
-        <Link href="/despesas" className="contents sm:block">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full sm:w-auto gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:hover:bg-rose-950/30"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Despesa
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-auto gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+          onClick={() => handleOpenQuickAdd("income")}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Entrada
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-auto gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:hover:bg-rose-950/30"
+          onClick={() => handleOpenQuickAdd("expense")}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Despesa
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -701,7 +722,14 @@ export function DashboardClient({ data, currentMonth, userName, userPlan }: { da
         </Card>
       </div>
 
-
+      {/* Quick Add Modal */}
+      <QuickAdd 
+        categories={categories}
+        hideFAB={true}
+        externalOpen={quickAddOpen}
+        externalType={quickAddType}
+        onExternalClose={() => setQuickAddOpen(false)}
+      />
     </div>
   )
 }

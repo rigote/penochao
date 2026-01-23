@@ -1,9 +1,8 @@
-
 import { NextResponse } from "next/server"
 import { db } from "@/db"
 import { verificationTokens } from "@/db/schema/auth"
 import { Resend } from "resend"
-import { html, text } from "@/lib/auth-email-templates"
+import { loginOtpEmail } from "@/lib/email-templates"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -27,14 +26,15 @@ export async function POST(request: Request) {
     })
 
     const host = new URL(request.url).host
+    const { html, text } = loginOtpEmail({ code: token, host })
 
     // Send Email
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
+      from: `Penochão <${process.env.RESEND_FROM_EMAIL || "noreply@penochao.app.br"}>`,
       to: email,
-      subject: `Seu código de login para ${host}`,
-      text: text({ url: token, host }), // Passing token as 'url' for now, template will be updated
-      html: html({ url: token, host }),
+      subject: `Seu código de acesso - Penochão`,
+      text,
+      html,
     })
 
     return NextResponse.json({ success: true })

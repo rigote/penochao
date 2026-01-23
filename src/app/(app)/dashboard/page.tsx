@@ -306,5 +306,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const data = await getDashboardData(user.id, currentMonthDate)
 
-  return <DashboardClient data={data} currentMonth={currentMonthDate} userName={user.name} userPlan={user.plan as "free" | "pro"} />
+  // Fetch categories for quick add
+  const categories = await db.query.categories.findMany({
+    orderBy: (categories, { asc }) => [asc(categories.name)],
+  })
+
+  return <DashboardClient 
+    data={data} 
+    currentMonth={currentMonthDate} 
+    userName={user.name} 
+    userPlan={user.plan as "free" | "pro"} 
+    categories={categories}
+  />
 }

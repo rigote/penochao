@@ -7,7 +7,8 @@ import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
 import { Separator } from "@/app/components/ui/separator"
-import { Settings as SettingsIcon, Save, PiggyBank, Sparkles, ChevronRight, Shield, FolderTree } from "lucide-react"
+import { Settings as SettingsIcon, Save, PiggyBank, Sparkles, ChevronRight, Shield, FolderTree, Lock } from "lucide-react"
+import { toast } from "sonner"
 
 interface UserSettings {
   emergencyFundMonths: string
@@ -25,9 +26,10 @@ const formatCurrency = (value: string | number) => {
 
 interface ConfiguracoesClientProps {
   initialSettings: UserSettings
+  userPlan: "free" | "pro"
 }
 
-export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProps) {
+export function ConfiguracoesClient({ initialSettings, userPlan }: ConfiguracoesClientProps) {
   const router = useRouter()
   const [settings, setSettings] = useState<UserSettings>(initialSettings)
   const [saving, setSaving] = useState(false)
@@ -176,26 +178,50 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
         </Card>
 
         {/* Categories Card */}
+        {/* Categories Card */}
         <Card
           variant="elevated"
-          interactive
-          onClick={() => router.push("/configuracoes/categorias")}
-          className="cursor-pointer group"
+          interactive={userPlan === "pro"}
+          onClick={() => {
+            if (userPlan === "free") {
+              toast.error("Funcionalidade Premium", {
+                description: "Personalização de categorias é exclusiva do plano Pro.",
+                action: { label: "Ser Pro", onClick: () => { } }
+              })
+              return
+            }
+            router.push("/configuracoes/categorias")
+          }}
+          className={`group transition-all ${userPlan === "free" ? "opacity-90 grayscale-[0.5]" : "cursor-pointer"}`}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center relative">
                   <FolderTree className="h-5 w-5 text-primary-foreground" />
+                  {userPlan === "free" && (
+                    <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-0.5 border-2 border-background">
+                      <Lock className="w-3 h-3 text-white" />
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <CardTitle>Categorias</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Categorias
+                    {userPlan === "free" && <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Pro</span>}
+                  </CardTitle>
                   <CardDescription>
-                    Gerencie suas categorias de despesas e receitas
+                    {userPlan === "free"
+                      ? "Desbloqueie para criar suas próprias categorias"
+                      : "Gerencie suas categorias de despesas e receitas"}
                   </CardDescription>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+              {userPlan === "pro" ? (
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+              ) : (
+                <Lock className="w-5 h-5 text-muted-foreground" />
+              )}
             </div>
           </CardHeader>
         </Card>

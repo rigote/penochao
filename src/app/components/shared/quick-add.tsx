@@ -13,6 +13,7 @@ import {
   Zap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
@@ -44,17 +45,47 @@ interface Category {
 
 interface QuickAddProps {
   categories: Category[]
+  /** If true, hides the floating action button (FAB) */
+  hideFAB?: boolean
+  /** External control: open dialog with specific type */
+  externalOpen?: boolean
+  /** External control: transaction type to open with */
+  externalType?: "income" | "expense"
+  /** Callback when external dialog closes */
+  onExternalClose?: () => void
 }
 
 type TransactionType = "income" | "expense"
 type ExpenseType = "essential" | "non_essential"
 
-export function QuickAdd({ categories }: QuickAddProps) {
+export function QuickAdd({ 
+  categories, 
+  hideFAB = false,
+  externalOpen,
+  externalType,
+  onExternalClose
+}: QuickAddProps) {
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
   const [transactionType, setTransactionType] = useState<TransactionType>("income")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Handle external open control
+  useEffect(() => {
+    if (externalOpen && externalType) {
+      setTransactionType(externalType)
+      setDialogOpen(true)
+    }
+  }, [externalOpen, externalType])
+
+  // Handle dialog close for external control
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open)
+    if (!open && onExternalClose) {
+      onExternalClose()
+    }
+  }
 
   // Form state
   const [description, setDescription] = useState("")
@@ -141,7 +172,7 @@ export function QuickAdd({ categories }: QuickAddProps) {
         })
       }
 
-      setDialogOpen(false)
+      handleDialogChange(false)
       router.refresh()
     } catch (error) {
       console.error("Error saving:", error)
@@ -155,7 +186,8 @@ export function QuickAdd({ categories }: QuickAddProps) {
 
   return (
     <>
-      {/* FAB Container */}
+      {/* FAB Container - hidden when hideFAB is true */}
+      {!hideFAB && (
       <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-3">
         {/* Quick Action Buttons - appear when expanded */}
         <div
@@ -208,9 +240,10 @@ export function QuickAdd({ categories }: QuickAddProps) {
           )}
         </button>
       </div>
+      )}
 
       {/* Backdrop when FAB is expanded */}
-      {isExpanded && (
+      {!hideFAB && isExpanded && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
           onClick={() => setIsExpanded(false)}
@@ -218,7 +251,7 @@ export function QuickAdd({ categories }: QuickAddProps) {
       )}
 
       {/* Quick Add Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="sm:max-w-[500px] bg-card border shadow-2xl z-50">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -359,7 +392,9 @@ export function QuickAdd({ categories }: QuickAddProps) {
                         <div key={root.id}>
                           <SelectItem value={root.id}>
                             <span className="flex items-center gap-2">
-                              <span style={{ color: root.color || undefined }}>{root.icon}</span>
+                              <span style={{ color: root.color || undefined }}>
+                                <CategoryIcon icon={root.icon} className="w-4 h-4" />
+                              </span>
                               <span className="font-medium">{root.name}</span>
                             </span>
                           </SelectItem>
@@ -369,7 +404,9 @@ export function QuickAdd({ categories }: QuickAddProps) {
                               <SelectItem key={sub.id} value={sub.id}>
                                 <span className="flex items-center gap-2 pl-4">
                                   <span className="text-muted-foreground/50">↳</span>
-                                  <span style={{ color: sub.color || undefined }}>{sub.icon}</span>
+                                  <span style={{ color: sub.color || undefined }}>
+                                    <CategoryIcon icon={sub.icon} className="w-4 h-4" />
+                                  </span>
                                   <span>{sub.name}</span>
                                 </span>
                               </SelectItem>

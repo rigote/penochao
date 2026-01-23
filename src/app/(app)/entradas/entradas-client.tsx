@@ -9,6 +9,7 @@ import { Label } from "@/app/components/ui/label"
 import { Badge } from "@/app/components/ui/badge"
 import { Checkbox } from "@/app/components/ui/checkbox"
 import { MonthSelector } from "@/app/components/shared/month-selector"
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 import {
   Table,
   TableBody,
@@ -402,7 +403,9 @@ export function EntradasClient({
                               <div key={root.id}>
                                 <SelectItem value={root.id}>
                                   <span className="flex items-center gap-2">
-                                    <span style={{ color: root.color || undefined }}>{root.icon}</span>
+                                    <span style={{ color: root.color || undefined }}>
+                                      <CategoryIcon icon={root.icon} className="w-4 h-4" />
+                                    </span>
                                     <span className="font-semibold">{root.name}</span>
                                   </span>
                                 </SelectItem>
@@ -412,7 +415,9 @@ export function EntradasClient({
                                     <SelectItem key={sub.id} value={sub.id}>
                                       <span className="flex items-center gap-2 pl-4">
                                         <span className="text-muted-foreground/50">↳</span>
-                                        <span style={{ color: sub.color || undefined }}>{sub.icon}</span>
+                                        <span style={{ color: sub.color || undefined }}>
+                                          <CategoryIcon icon={sub.icon} className="w-4 h-4" />
+                                        </span>
                                         <span>{sub.name}</span>
                                       </span>
                                     </SelectItem>
@@ -541,7 +546,7 @@ export function EntradasClient({
                             >
                               {income.categoryIcon && (
                                 <span style={{ color: income.categoryColor || undefined }}>
-                                  {income.categoryIcon}
+                                  <CategoryIcon icon={income.categoryIcon} className="w-4 h-4" />
                                 </span>
                               )}
                               {income.categoryName}
@@ -611,7 +616,7 @@ export function EntradasClient({
                                 color: income.categoryColor || '#16a34a'
                               }}
                             >
-                              {income.categoryIcon ? <span className="text-xs">{income.categoryIcon}</span> : <ArrowUpCircle className="w-3.5 h-3.5" />}
+                              {income.categoryIcon ? <CategoryIcon icon={income.categoryIcon} className="w-3.5 h-3.5" /> : <ArrowUpCircle className="w-3.5 h-3.5" />}
                             </div>
                             <h4 className="font-semibold text-sm line-clamp-1">{income.description}</h4>
                           </div>

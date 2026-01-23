@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
-import { Plus, Pencil, Trash2, CornerDownRight, Sparkles, FolderTree, ArrowLeft, ChevronRight } from "lucide-react"
+import { Plus, Pencil, Trash2, CornerDownRight, Sparkles, FolderTree, ArrowLeft, ChevronRight, Lock } from "lucide-react"
 import { CategoryFormDialog } from "@/app/components/categories/category-form-dialog"
 import { Badge } from "@/app/components/ui/badge"
 import Link from "next/link"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +69,7 @@ interface Category {
   isDefault: boolean
 }
 
-export function CategoriesManager({ initialCategories }: { initialCategories: Category[] }) {
+export function CategoriesManager({ initialCategories, userPlan = "free" }: { initialCategories: Category[], userPlan?: "free" | "pro" }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("expenses")
 
@@ -91,12 +92,26 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
   const getChildren = (parentId: string) => filteredCategories.filter(c => c.parentId === parentId && !c.archived)
 
   const handleCreateRoot = () => {
+    if (userPlan === "free") {
+      toast.error("Funcionalidade Premium", {
+        description: "Faça o upgrade para criar categorias personalizadas.",
+        icon: <Lock className="w-4 h-4" />
+      })
+      return
+    }
     setEditingCategory(null)
     setParentForNewData(null)
     setIsDialogOpen(true)
   }
 
   const handleCreateSub = (parent: Category) => {
+    if (userPlan === "free") {
+      toast.error("Funcionalidade Premium", {
+        description: "Faça o upgrade para criar subcategorias.",
+        icon: <Lock className="w-4 h-4" />
+      })
+      return
+    }
     setEditingCategory(null)
     setParentForNewData(parent)
     setIsDialogOpen(true)
@@ -171,6 +186,20 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
           Voltar para Configurações
         </Link>
 
+        {userPlan === "free" && (
+          <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 p-4 rounded-xl flex items-center gap-3 border border-amber-200 dark:border-amber-900/50">
+            <Lock className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm">
+              Você está usando as categorias essenciais do <strong>Plano Free</strong>.
+              <br className="sm:hidden" />
+              Faça upgrade para criar categorias ilimitadas.
+            </p>
+            <Button size="sm" variant="outline" className="ml-auto border-amber-300 hover:bg-amber-200 text-amber-900 dark:border-amber-800 dark:hover:bg-amber-900">
+              Ser Pro
+            </Button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -188,9 +217,10 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
           <Button
             onClick={handleCreateRoot}
-            className="gap-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-lg shadow-purple-500/20"
+            disabled={userPlan === "free"}
+            className={`gap-2 shadow-lg transition-all ${userPlan === 'free' ? 'bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-70' : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-purple-500/20'}`}
           >
-            <Plus className="w-4 h-4" />
+            {userPlan === "free" ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             <span className="hidden sm:inline">Nova Categoria</span>
             <span className="sm:hidden">Nova</span>
           </Button>
@@ -262,9 +292,9 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                         size="sm"
                         onClick={() => handleCreateSub(root)}
                         title="Adicionar Subcategoria"
-                        className="h-8 w-8 p-0 rounded-lg hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-900/30"
+                        className={`h-8 w-8 p-0 rounded-lg hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-900/30 ${userPlan === 'free' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <Plus className="w-4 h-4" />
+                        {userPlan === 'free' ? <Lock className="w-3 h-3 text-muted-foreground" /> : <Plus className="w-4 h-4" />}
                       </Button>
                       {!root.isDefault && (
                         <>

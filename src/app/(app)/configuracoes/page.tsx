@@ -47,5 +47,5 @@ export default async function ConfiguracoesPage() {
 
   const settings = await getUserSettings(user.id)
 
-  return <ConfiguracoesClient initialSettings={settings} />
+  return <ConfiguracoesClient initialSettings={settings} userPlan={user.plan as "free" | "pro"} />
 }

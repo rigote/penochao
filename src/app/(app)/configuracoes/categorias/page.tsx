@@ -43,5 +43,5 @@ export default async function CategoriasPage() {
     createdAt: c.createdAt.toISOString() // if needed
   }))
 
-  return <CategoriesManager initialCategories={serializedCategories as any} />
+  return <CategoriesManager initialCategories={serializedCategories as any} userPlan={user.plan as "free" | "pro"} />
 }

@@ -34,6 +34,7 @@ import {
   Lock
 } from "lucide-react"
 import { toast } from "sonner"
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 
 interface ExtractedData {
   description?: string
@@ -270,6 +271,36 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
         </p>
       </div>
 
+      {/* Usage Progress - Only for Free Plan */}
+      {userPlan === "free" && (
+        <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 dark:border-orange-900/30">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full text-orange-600">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium text-orange-800 dark:text-orange-200">
+                  Uso do Plano Gratuito
+                </span>
+                <span className="text-muted-foreground">
+                  {currentUsage} de {FREE_LIMIT} envios
+                </span>
+              </div>
+              <div className="h-2 w-full bg-orange-200 dark:bg-orange-950/30 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-500 transition-all duration-500"
+                  style={{ width: `${Math.min((currentUsage / FREE_LIMIT) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-100 hover:text-orange-800 hidden sm:flex">
+              Fazer Upgrade
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Upload Area */}
       <Card
         className={`border-3 border-dashed transition-all duration-300 overflow-hidden relative
@@ -280,14 +311,14 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
           backdrop-blur-xl shadow-xl hover:shadow-2xl rounded-3xl
         `}
       >
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center relative z-10">
+        <CardContent className="flex flex-col items-center justify-center py-24 text-center relative z-10">
           <input
             type="file"
             accept="application/pdf"
             multiple
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 disabled:cursor-not-allowed"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
-            disabled={uploading}
+            disabled={uploading || isLimitReached}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -295,45 +326,85 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
           />
 
           {uploading ? (
-            <div className="space-y-6 pointer-events-none">
-              <div className="relative">
-                <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-20 animate-pulse w-24 h-24 mx-auto" />
-                <Loader2 className="h-16 w-16 mx-auto text-purple-600 animate-spin relative z-10" />
+            <div className="w-full max-w-sm mx-auto space-y-8 pointer-events-none">
+              <div className="relative mx-auto w-24 h-24">
+                <div className="absolute inset-0 bg-purple-500 rounded-full blur-xl opacity-20 animate-pulse" />
+                <div className="relative bg-white dark:bg-zinc-800 rounded-full w-full h-full flex items-center justify-center shadow-lg border-4 border-purple-100 dark:border-purple-900">
+                  <Sparkles className="w-10 h-10 text-purple-600 animate-pulse" />
+                </div>
+
+                {/* Orbiting Loading Spinner */}
+                <svg className="absolute inset-0 w-full h-full animate-spin duration-3000" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-200 dark:text-purple-900" />
+                  <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="100 200" className="text-purple-600" />
+                </svg>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Analisando documentos...</h3>
-                <p className="text-sm text-muted-foreground animate-pulse">Nossa IA está extraindo os detalhes financeiros</p>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
+                  Processando com IA...
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground max-w-[200px] mx-auto">
+                    <span>Extraindo dados</span>
+                    <span>100%</span>
+                  </div>
+                  <div className="h-1.5 w-full max-w-[200px] mx-auto bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-purple-600 w-full animate-[loading_2s_ease-in-out_infinite]" />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
             <div className="space-y-6 pointer-events-none transition-all duration-300 group-hover:scale-105">
-              <div className="p-6 bg-purple-100 dark:bg-purple-900/30 rounded-full shadow-lg inline-block mb-2 group-hover:shadow-purple-500/20 transition-all">
-                {isLimitReached ? (
-                  <Lock className="h-10 w-10 text-gray-500" />
-                ) : (
-                  <Upload className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+              <div className="relative inline-block">
+                <div className={`p-8 rounded-full shadow-xl transition-all duration-500
+                    ${isLimitReached
+                    ? 'bg-gray-100 text-gray-400 dark:bg-zinc-800'
+                    : 'bg-gradient-to-br from-purple-100 to-white dark:from-purple-900/40 dark:to-zinc-900 text-purple-600 shadow-purple-500/20'
+                  }
+                 `}>
+                  {isLimitReached ? (
+                    <Lock className="h-12 w-12" />
+                  ) : (
+                    <Upload className="h-12 w-12" />
+                  )}
+                </div>
+                {!isLimitReached && (
+                  <div className="absolute -bottom-2 -right-2 bg-white dark:bg-zinc-800 p-2 rounded-full shadow-lg border border-purple-100 dark:border-purple-900 animate-bounce delay-700">
+                    <FileText className="w-5 h-5 text-purple-600" />
+                  </div>
                 )}
               </div>
-              <div>
-                <h3 className="text-2xl font-semibold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                  {isLimitReached ? "Limite Gratuito Atingido" : "Solte suas faturas aqui"}
+
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-2xl font-bold tracking-tight">
+                  {isLimitReached ? "Limite Mensal Atingido" : "Arraste ou clique para enviar"}
                 </h3>
-                <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
+                <p className="text-muted-foreground">
                   {isLimitReached
-                    ? `Você atingiu o limite de ${FREE_LIMIT} envios mensais. Faça upgrade para continuar.`
-                    : "Suportamos múltiplos arquivos PDF. Arraste ou clique para selecionar."
+                    ? "Você atingiu o limite gratuito de envios. Libere o poder ilimitado da IA com o plano Pro."
+                    : "Suportamos faturas em PDF (Nubank, C6, etc). Nossa IA extrai tudo automaticamente."
                   }
                 </p>
               </div>
+
               <Button
                 size="lg"
                 disabled={isLimitReached}
-                className={isLimitReached
-                  ? "mt-4 pointer-events-auto relative z-20 rounded-full px-8 bg-gray-400"
-                  : "mt-4 pointer-events-auto relative z-20 rounded-full px-8 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 bg-purple-600 hover:bg-purple-700 transition-all"
-                }
+                className={`
+                  rounded-full px-8 h-12 font-medium transition-all duration-300 transform
+                  ${isLimitReached
+                    ? "bg-muted text-muted-foreground hover:bg-muted"
+                    : "bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1"
+                  }
+                `}
               >
-                {isLimitReached ? "Desbloquear Ilimitado" : "Selecionar Arquivos"}
+                {isLimitReached ? (
+                  <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> Bloqueado</span>
+                ) : (
+                  "Selecionar Arquivo PDF"
+                )}
               </Button>
             </div>
           )}
@@ -479,7 +550,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage }: FaturasCli
                                 {getFilteredCategories(invoice.editedType).map((cat) => (
                                   <SelectItem key={cat.id} value={cat.id}>
                                     <span className="flex items-center gap-2">
-                                      <span>{cat.icon}</span>
+                                      <CategoryIcon icon={cat.icon} className="w-4 h-4" />
                                       <span>{cat.name}</span>
                                     </span>
                                   </SelectItem>

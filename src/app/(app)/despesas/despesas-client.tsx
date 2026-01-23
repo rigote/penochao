@@ -57,6 +57,7 @@ import {
   PaginationPrevious,
 } from "@/app/components/ui/pagination"
 import { Plus, Pencil, Trash2, ArrowDownCircle, Wallet, AlertTriangle, Sparkles, TrendingDown, Zap } from "lucide-react"
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -455,7 +456,9 @@ export function DespesasClient({
                               <div key={root.id}>
                                 <SelectItem value={root.id}>
                                   <span className="flex items-center gap-2">
-                                    <span style={{ color: root.color || undefined }}>{root.icon}</span>
+                                    <span style={{ color: root.color || undefined }}>
+                                      <CategoryIcon icon={root.icon} className="w-4 h-4" />
+                                    </span>
                                     <span className="font-semibold">{root.name}</span>
                                   </span>
                                 </SelectItem>
@@ -465,7 +468,9 @@ export function DespesasClient({
                                     <SelectItem key={sub.id} value={sub.id}>
                                       <span className="flex items-center gap-2 pl-4">
                                         <span className="text-muted-foreground/50">↳</span>
-                                        <span style={{ color: sub.color || undefined }}>{sub.icon}</span>
+                                        <span style={{ color: sub.color || undefined }}>
+                                          <CategoryIcon icon={sub.icon} className="w-4 h-4" />
+                                        </span>
                                         <span>{sub.name}</span>
                                       </span>
                                     </SelectItem>
@@ -638,7 +643,7 @@ export function DespesasClient({
                               >
                                 {expense.categoryIcon && (
                                   <span style={{ color: expense.categoryColor || undefined }}>
-                                    {expense.categoryIcon}
+                                    <CategoryIcon icon={expense.categoryIcon} className="w-4 h-4" />
                                   </span>
                                 )}
                                 {expense.categoryName}
@@ -707,7 +712,7 @@ export function DespesasClient({
                                   color: expense.categoryColor || (expense.type === 'essential' ? '#dc2626' : '#ea580c')
                                 }}
                               >
-                                {expense.categoryIcon ? <span className="text-xs">{expense.categoryIcon}</span> : <ArrowDownCircle className="w-3.5 h-3.5" />}
+                                {expense.categoryIcon ? <CategoryIcon icon={expense.categoryIcon} className="w-3.5 h-3.5" /> : <ArrowDownCircle className="w-3.5 h-3.5" />}
                               </div>
                               <h4 className="font-semibold text-sm line-clamp-1">{expense.description}</h4>
                             </div>

@@ -17,12 +17,16 @@ import {
   ShoppingCart, Home, Car, Plane, Utensils, Heart, Briefcase, GraduationCap,
   Zap, Smartphone, Wifi, Gift, Hammer, Dog, Baby, Shirt, Music, Coffee,
   Book, DollarSign, Umbrella, Camera, Landmark, Ticket, Film, Gamepad,
-  Cross
+  Cross, ShoppingBag, Clapperboard, Wallet, CreditCard, Fuel,
+  Pill, Bus, Globe, Tv, Scissors, Phone, Building2, Package, Receipt,
+  Banknote, Target, CircleDollarSign, Lightbulb, Droplets, Flame, FileText,
+  Shield, TrendingUp, Pizza, Salad, Tags
 } from "lucide-react"
 
 // Map of available icons
 const ICON_MAP: Record<string, any> = {
   "shopping-cart": ShoppingCart,
+  "shopping-bag": ShoppingBag,
   "home": Home,
   "car": Car,
   "plane": Plane,
@@ -48,7 +52,32 @@ const ICON_MAP: Record<string, any> = {
   "ticket": Ticket,
   "film": Film,
   "gamepad": Gamepad,
-  "cross": Cross
+  "cross": Cross,
+  "clapperboard": Clapperboard,
+  "wallet": Wallet,
+  "credit-card": CreditCard,
+  "fuel": Fuel,
+  "pill": Pill,
+  "bus": Bus,
+  "globe": Globe,
+  "tv": Tv,
+  "scissors": Scissors,
+  "phone": Phone,
+  "building": Building2,
+  "package": Package,
+  "receipt": Receipt,
+  "banknote": Banknote,
+  "target": Target,
+  "circle-dollar-sign": CircleDollarSign,
+  "lightbulb": Lightbulb,
+  "droplets": Droplets,
+  "flame": Flame,
+  "file-text": FileText,
+  "shield": Shield,
+  "trending-up": TrendingUp,
+  "pizza": Pizza,
+  "salad": Salad,
+  "tags": Tags
 }
 
 const COLORS = [
