@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { signIn } from "next-auth/react"
-import { Github } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -158,12 +157,8 @@ export function UserAuthForm({ className }: { className?: string }) {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" type="button" disabled={isLoading} onClick={() => signIn("github")}>
-              <Github className="mr-2 h-4 w-4" />
-              Github
-            </Button>
-            <Button variant="outline" type="button" disabled={isLoading} onClick={() => signIn("google")}>
+          <div className="grid gap-4">
+            <Button variant="outline" type="button" disabled={isLoading} onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
               <Icons.google className="mr-2 h-4 w-4" />
               Google
             </Button>

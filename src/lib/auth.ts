@@ -4,24 +4,32 @@ import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/db"
-import { verificationTokens, users } from "@/db/schema/auth"
+import { verificationTokens, users, accounts, sessions } from "@/db/schema/auth"
 import { eq, and, gt } from "drizzle-orm"
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { html, text } from "./auth-email-templates"
 
 export const authOptions: NextAuthOptions = {
-  adapter: DrizzleAdapter(db),
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
   session: {
     strategy: "jwt"
   },
+  debug: true,
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "OTP",
@@ -110,6 +118,34 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
       }
+    },
+  },
+  events: {
+    async linkAccount({ user, account }) {
+      console.log("[DEBUG AUTH] Conta vinculada com sucesso:", { userId: user.id, provider: account.provider })
+
+      // Se vinculou com conta social, marca email como verificado se não estiver
+      if (account.provider === "google" || account.provider === "github") {
+        await db.update(users)
+          .set({ emailVerified: new Date() })
+          .where(eq(users.id, user.id))
+      }
+    },
+    async signIn({ user, account, profile }) {
+      console.log("[DEBUG AUTH] Login realizado com sucesso:", { userId: user.id })
+
+      // Se logou com conta social verificada, atualiza no banco
+      if ((account?.provider === "google" || account?.provider === "github") && !(user as any).emailVerified) {
+        // @ts-ignore - profile types vary by provider
+        if (profile?.email_verified === true || profile?.verified === true) { // check google/github field
+          await db.update(users)
+            .set({ emailVerified: new Date() })
+            .where(eq(users.id, user.id))
+        }
+      }
+    },
+    async createUser({ user }) {
+      console.log("[DEBUG AUTH] Novo usuário criado:", user.email)
     },
   },
 } 

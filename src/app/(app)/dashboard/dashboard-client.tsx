@@ -97,7 +97,7 @@ const formatCompactCurrency = (value: number) => {
   return formatCurrency(value)
 }
 
-export function DashboardClient({ data, currentMonth }: { data: DashboardData, currentMonth: Date }) {
+export function DashboardClient({ data, currentMonth, userName }: { data: DashboardData, currentMonth: Date, userName: string | null }) {
   const [showAllAchievements, setShowAllAchievements] = useState(false)
 
   const isPositiveBalance = data.monthlyBalance >= 0
@@ -134,8 +134,8 @@ export function DashboardClient({ data, currentMonth }: { data: DashboardData, c
             <Sparkles className="w-5 h-5 text-primary" />
             <span className="text-sm font-medium text-primary">Dashboard</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Visão Geral
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {userName ? `Olá, ${userName.split(' ')[0]}!` : 'Bem-vindo!'}
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">
             {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}

@@ -1,12 +1,13 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
-import { PiggyBank, Sparkles } from "lucide-react"
+import { PiggyBank, Sparkles, MessageSquarePlus } from "lucide-react"
 import { Separator } from "@/app/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
 import { UserMenu } from "./components/user-menu"
 import { MobileNav } from "./components/mobile-nav"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
+import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -34,9 +35,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const user = {
-    name: session.user.name || null,
-    email: session.user.email || null,
-    image: session.user.image || null,
+    name: dbUser.name || session.user.name || null,
+    email: dbUser.email || session.user.email || null,
+    image: dbUser.image || null,
   }
 
 
@@ -48,22 +49,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 border-r bg-gradient-to-b from-background to-muted/30">
-          {/* Subtle pattern overlay */}
-          <div className="absolute inset-0 pattern-dots opacity-30 pointer-events-none" />
-
-          <div className="relative flex flex-col h-full">
+        <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 border-r bg-card">
+          <div className="flex flex-col h-full">
             {/* Logo Area */}
             <div className="p-6">
               <Link href="/dashboard" className="flex items-center gap-3 group">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors" />
-                  <div className="relative bg-gradient-to-br from-primary to-primary/80 p-2 rounded-xl shadow-lg">
-                    <PiggyBank className="h-6 w-6 text-primary-foreground" />
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                  <PiggyBank className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <span className="font-bold text-xl text-gradient">Penochão</span>
+                  <span className="font-bold text-xl">Penochão</span>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
                     Controle Financeiro
@@ -75,6 +70,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Separator className="opacity-50" />
 
             <SidebarNav navItems={navItems} />
+
+            <div className="px-3 pb-4">
+              <FeedbackDialog>
+                <button className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <MessageSquarePlus className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
+                  Feedback
+                </button>
+              </FeedbackDialog>
+            </div>
 
             <Separator className="opacity-50" />
 

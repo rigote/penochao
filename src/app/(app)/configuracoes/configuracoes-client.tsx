@@ -74,10 +74,7 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
           <Sparkles className="w-5 h-5 text-primary" />
           <span className="text-sm font-medium text-primary">Preferências</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-            <SettingsIcon className="w-5 h-5 text-primary-foreground" />
-          </div>
+        <h1 className="text-3xl font-bold tracking-tight">
           Configurações
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -90,8 +87,8 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
         <Card variant="elevated">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Shield className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
                 <CardTitle>Reserva de Emergência</CardTitle>
@@ -162,14 +159,14 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
               </p>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 border border-blue-100 dark:border-blue-900/30">
+            <div className="rounded-xl bg-muted/50 p-4 border">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                  <PiggyBank className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <PiggyBank className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Sua reserva atual</p>
-                  <p className="text-xl font-bold text-blue-600">
+                  <p className="text-xl font-bold text-primary">
                     {formatCurrency(settings.currentSavings)}
                   </p>
                 </div>
@@ -188,8 +185,8 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <FolderTree className="h-5 w-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                  <FolderTree className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
                   <CardTitle>Categorias</CardTitle>
@@ -208,7 +205,7 @@ export function ConfiguracoesClient({ initialSettings }: ConfiguracoesClientProp
           <Button
             type="submit"
             disabled={saving}
-            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+            className="gap-2"
           >
             <Save className="w-4 h-4" />
             {saving ? "Salvando..." : "Salvar Configurações"}
