@@ -5,6 +5,7 @@ import { incomes, expenses, categories } from "@/db/schema/finance"
 import { eq, and, gte, lte, desc } from "drizzle-orm"
 import { decrypt, decryptNumber } from "@/lib/encryption"
 import { startOfMonth, endOfMonth, format } from "date-fns"
+import { ptBR } from "date-fns/locale/pt-BR"
 
 export async function GET(request: Request) {
   try {

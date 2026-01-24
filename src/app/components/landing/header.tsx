@@ -149,62 +149,99 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu overlay */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col gap-4">
-              {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
-              ))}
-              <div className="flex flex-col gap-2 pt-4 border-t">
-                {isLoggedIn ? (
-                  <>
-                    <div className="flex items-center gap-3 py-2">
-                      {session.user.image ? (
-                        <Image
-                          src={session.user.image}
-                          alt={session.user.name || "Usuário"}
-                          width={40}
-                          height={40}
-                          className="rounded-full"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-base font-medium text-primary">
-                          {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{session.user.name || "Usuário"}</span>
-                        <span className="text-xs text-muted-foreground">{session.user.email}</span>
-                      </div>
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            
+            {/* Mobile menu drawer */}
+            <div className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-background border-r shadow-xl z-[60] md:hidden transform transition-transform duration-300 ease-in-out overflow-y-auto">
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b">
+                  <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground">
+                      <PiggyBank className="w-5 h-5" />
                     </div>
-                    <Button size="sm" asChild>
-                      <Link href="/dashboard" className="gap-2">
-                        <LayoutDashboard className="w-4 h-4" />
-                        Acessar Dashboard
-                      </Link>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href="/login">Entrar</Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <Link href="/login">Começar grátis</Link>
-                    </Button>
-                  </>
-                )}
+                    <span className="text-xl font-bold tracking-tight">Penochão</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="p-2 -m-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <X className="h-6 w-6" />
+                    <span className="sr-only">Fechar menu</span>
+                  </button>
+                </div>
+
+                {/* Navigation */}
+                <div className="flex-1 p-4">
+                  <div className="space-y-1 mb-6">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
+                      Navegação
+                    </p>
+                    {navigation.map((item) => (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </a>
+                    ))}
+                  </div>
+
+                  {/* User section */}
+                  <div className="pt-6 border-t">
+                    {isLoggedIn ? (
+                      <>
+                        <div className="flex items-center gap-3 px-3 py-3 mb-4 rounded-lg bg-muted/50">
+                          {session.user.image ? (
+                            <Image
+                              src={session.user.image}
+                              alt={session.user.name || "Usuário"}
+                              width={40}
+                              height={40}
+                              className="rounded-full"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-base font-medium text-primary flex-shrink-0">
+                              {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
+                            </div>
+                          )}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-medium truncate">{session.user.name || "Usuário"}</span>
+                            <span className="text-xs text-muted-foreground truncate">{session.user.email}</span>
+                          </div>
+                        </div>
+                        <Button size="sm" className="w-full gap-2" asChild>
+                          <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                            <LayoutDashboard className="w-4 h-4" />
+                            Acessar Dashboard
+                          </Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Button variant="outline" size="sm" className="w-full" asChild>
+                          <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Entrar</Link>
+                        </Button>
+                        <Button size="sm" className="w-full" asChild>
+                          <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Começar grátis</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </nav>
     </header>

@@ -193,13 +193,13 @@ export function ExpenseSuggestions({ month, year, userPlan, monthlyBalance: init
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 dark:border-orange-800 dark:hover:bg-orange-950/30"
+          className="w-full sm:w-auto gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 dark:border-orange-800 dark:hover:bg-orange-950/30 min-w-0"
         >
-          <Lightbulb className="w-4 h-4" />
-          Sugestões de Economia
+          <Lightbulb className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">Sugestões de Economia</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
@@ -267,19 +267,19 @@ export function ExpenseSuggestions({ month, year, userPlan, monthlyBalance: init
           {!checkingCache && data && data.suggestions.length > 0 && (
             <>
               {/* Total Savings Card */}
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-200/50 dark:border-green-800/30">
-                <div className="flex items-center justify-between">
-                  <div>
+              <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-200/50 dark:border-green-800/30">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-muted-foreground mb-1">Economia Potencial</p>
-                    <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400 break-words">
                       {formatCurrency(data.totalPotentialSavings)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground mt-2 break-words">
                       Se você seguir as sugestões de alta e média prioridade
                     </p>
                   </div>
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                    <TrendingDown className="w-8 h-8 text-white" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20 flex-shrink-0">
+                    <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
                 </div>
               </div>

@@ -151,20 +151,55 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
 
       const reportData = await response.json()
 
-      const doc = new jsPDF()
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      })
+      
+      // Configure UTF-8 support
+      doc.setLanguage('pt-BR')
+      
       let yPosition = 20
       const pageWidth = doc.internal.pageSize.getWidth()
-      const margin = 14
+      const pageHeight = doc.internal.pageSize.getHeight()
+      const margin = 20 // Increased margin for better centering
       const contentWidth = pageWidth - (margin * 2)
 
       // Helper function to add new page if needed
       const checkPageBreak = (requiredSpace: number) => {
-        if (yPosition + requiredSpace > doc.internal.pageSize.getHeight() - 20) {
+        if (yPosition + requiredSpace > pageHeight - 30) {
           doc.addPage()
           yPosition = 20
           return true
         }
         return false
+      }
+      
+      // Helper function to wrap text to fit column width
+      const wrapText = (text: string, maxWidth: number): string[] => {
+        const words = text.split(' ')
+        const lines: string[] = []
+        let currentLine = ''
+        
+        words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const testWidth = doc.getTextWidth(testLine)
+          
+          if (testWidth > maxWidth && currentLine) {
+            lines.push(currentLine)
+            currentLine = word
+          } else {
+            currentLine = testLine
+          }
+        })
+        
+        if (currentLine) {
+          lines.push(currentLine)
+        }
+        
+        return lines
       }
 
       // Helper function to format currency
@@ -196,27 +231,28 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
       doc.setTextColor(0, 0, 0)
       yPosition = 80
 
-      // Informações gerais
+      // Informações gerais - centered
       doc.setFontSize(10)
       doc.setFont("helvetica", "normal")
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR', { 
+      const generatedDate = new Date().toLocaleDateString('pt-BR', { 
         day: '2-digit', 
         month: 'long', 
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
-      })}`, margin, yPosition)
-      yPosition += 10
-      doc.text(`Usuário: ${userName || "Usuário"}`, margin, yPosition)
-      yPosition += 15
+      })
+      doc.text(`Gerado em: ${generatedDate}`, pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 8
+      doc.text(`Usuário: ${userName || "Usuário"}`, pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 20
 
       // ========== RESUMO EXECUTIVO ==========
       checkPageBreak(50)
       doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(124, 58, 237)
-      doc.text("1. Resumo Executivo", margin, yPosition)
-      yPosition += 10
+      doc.text("1. Resumo Executivo", pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 12
 
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
@@ -227,12 +263,12 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         [
           'Total de Entradas',
           formatCurrency(reportData.summary.totalIncomes),
-          reportData.summary.totalIncomes > 0 ? '✓' : '⚠'
+          reportData.summary.totalIncomes > 0 ? 'OK' : 'Atencao'
         ],
         [
           'Total de Despesas',
           formatCurrency(reportData.summary.totalExpenses),
-          reportData.summary.totalExpenses > 0 ? '✓' : '⚠'
+          reportData.summary.totalExpenses > 0 ? 'OK' : 'Atencao'
         ],
         [
           'Despesas Essenciais',
@@ -240,19 +276,19 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           `${reportData.summary.essentialPercentage.toFixed(1)}% do total`
         ],
         [
-          'Despesas Não Essenciais',
+          'Despesas Nao Essenciais',
           formatCurrency(reportData.summary.totalNonEssential),
           `${reportData.summary.nonEssentialPercentage.toFixed(1)}% do total`
         ],
         [
-          'Saldo do Mês',
+          'Saldo do Mes',
           formatCurrency(reportData.summary.monthlyBalance),
-          reportData.summary.monthlyBalance >= 0 ? '✓ Positivo' : '⚠ Negativo'
+          reportData.summary.monthlyBalance >= 0 ? 'Positivo' : 'Negativo'
         ],
         [
-          'Taxa de Poupança',
+          'Taxa de Poupanca',
           `${reportData.summary.savingsRate.toFixed(1)}%`,
-          reportData.summary.savingsRate >= 20 ? '✓ Excelente' : reportData.summary.savingsRate >= 10 ? 'Bom' : 'Pode melhorar'
+          reportData.summary.savingsRate >= 20 ? 'Excelente' : reportData.summary.savingsRate >= 10 ? 'Bom' : 'Pode melhorar'
         ],
       ]
 
@@ -262,29 +298,30 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         body: summaryData.slice(1),
         theme: 'grid',
         headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
-        styles: { fontSize: 9 },
+        styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: {
-          0: { cellWidth: 70 },
-          1: { cellWidth: 60, halign: 'right' },
-          2: { cellWidth: 50, halign: 'center' }
+          0: { cellWidth: 75, halign: 'left' },
+          1: { cellWidth: 55, halign: 'right' },
+          2: { cellWidth: 60, halign: 'left' }
         },
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
       })
 
       yPosition = (doc as any).lastAutoTable.finalY + 15
 
-      // ========== ANÁLISE DE ENTRADAS ==========
+      // ========== ANALISE DE ENTRADAS ==========
       checkPageBreak(60)
       doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(124, 58, 237)
-      doc.text("2. Análise de Entradas", margin, yPosition)
-      yPosition += 10
+      doc.text("2. Analise de Entradas", pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 12
 
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
       doc.setFont("helvetica", "normal")
-      doc.text(`Total de ${reportData.incomes.count} entrada(s) registrada(s)`, margin, yPosition)
+      doc.text(`Total de ${reportData.incomes.count} entrada(s) registrada(s)`, pageWidth / 2, yPosition, { align: "center" })
       yPosition += 8
 
       if (reportData.incomes.list.length > 0) {
@@ -292,13 +329,14 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           ['Data', 'Descrição', 'Categoria', 'Valor', 'Recorrência']
         ]
 
-        reportData.incomes.list.forEach(income => {
+        reportData.incomes.list.forEach((income: { occurrenceDate: string; description: string; category: string; amount: number; recurrence: string | null }) => {
+          const description = income.description.length > 50 ? income.description.substring(0, 50) + '...' : income.description
           incomesTableData.push([
             formatDate(income.occurrenceDate),
-            income.description.length > 40 ? income.description.substring(0, 40) + '...' : income.description,
+            description,
             income.category,
             formatCurrency(income.amount),
-            income.recurrence === 'monthly' ? 'Mensal' : income.recurrence === 'yearly' ? 'Anual' : 'Única'
+            income.recurrence === 'monthly' ? 'Mensal' : income.recurrence === 'yearly' ? 'Anual' : 'Unica'
           ])
         })
 
@@ -308,15 +346,16 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           body: incomesTableData.slice(1),
           theme: 'striped',
           headStyles: { fillColor: [34, 197, 94], textColor: [255, 255, 255], fontStyle: 'bold' },
-          styles: { fontSize: 8 },
+          styles: { fontSize: 8, cellPadding: 2.5 },
           columnStyles: {
-            0: { cellWidth: 30 },
-            1: { cellWidth: 70 },
-            2: { cellWidth: 40 },
-            3: { cellWidth: 35, halign: 'right' },
-            4: { cellWidth: 25, halign: 'center' }
+            0: { cellWidth: 28, halign: 'left' },
+            1: { cellWidth: 75, halign: 'left' },
+            2: { cellWidth: 45, halign: 'left' },
+            3: { cellWidth: 32, halign: 'right' },
+            4: { cellWidth: 20, halign: 'center' }
           },
-          margin: { left: margin, right: margin }
+          margin: { left: margin, right: margin },
+          tableWidth: contentWidth
         })
 
         yPosition = (doc as any).lastAutoTable.finalY + 10
@@ -330,8 +369,8 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           checkPageBreak(40)
           doc.setFontSize(14)
           doc.setFont("helvetica", "bold")
-          doc.text("Entradas por Categoria", margin, yPosition)
-          yPosition += 8
+          doc.text("Entradas por Categoria", pageWidth / 2, yPosition, { align: "center" })
+          yPosition += 10
 
           const categoryData = [
             ['Categoria', 'Total', '% do Total']
@@ -352,36 +391,37 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
             body: categoryData.slice(1),
             theme: 'grid',
             headStyles: { fillColor: [34, 197, 94], textColor: [255, 255, 255], fontStyle: 'bold' },
-            styles: { fontSize: 9 },
+            styles: { fontSize: 9, cellPadding: 3 },
             columnStyles: {
-              0: { cellWidth: 100 },
+              0: { cellWidth: 110, halign: 'left' },
               1: { cellWidth: 50, halign: 'right' },
               2: { cellWidth: 40, halign: 'right' }
             },
-            margin: { left: margin, right: margin }
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth
           })
 
           yPosition = (doc as any).lastAutoTable.finalY + 15
         }
       } else {
-        doc.text("Nenhuma entrada registrada neste mês.", margin, yPosition)
+        doc.text("Nenhuma entrada registrada neste mes.", pageWidth / 2, yPosition, { align: "center" })
         yPosition += 10
       }
 
-      // ========== ANÁLISE DE DESPESAS ==========
+      // ========== ANALISE DE DESPESAS ==========
       checkPageBreak(60)
       doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(124, 58, 237)
-      doc.text("3. Análise de Despesas", margin, yPosition)
-      yPosition += 10
+      doc.text("3. Analise de Despesas", pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 12
 
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
       doc.setFont("helvetica", "normal")
-      doc.text(`Total de ${reportData.expenses.count} despesa(s) registrada(s)`, margin, yPosition)
+      doc.text(`Total de ${reportData.expenses.count} despesa(s) registrada(s)`, pageWidth / 2, yPosition, { align: "center" })
       yPosition += 5
-      doc.text(`Essenciais: ${reportData.expenses.essentialCount} | Não Essenciais: ${reportData.expenses.nonEssentialCount}`, margin, yPosition)
+      doc.text(`Essenciais: ${reportData.expenses.essentialCount} | Nao Essenciais: ${reportData.expenses.nonEssentialCount}`, pageWidth / 2, yPosition, { align: "center" })
       yPosition += 8
 
       if (reportData.expenses.list.length > 0) {
@@ -389,14 +429,22 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Recorrência']
         ]
 
-        reportData.expenses.list.forEach(expense => {
+        reportData.expenses.list.forEach((expense: {
+          occurrenceDate: string
+          description: string
+          category: string
+          type: 'essential' | 'non_essential'
+          amount: number
+          recurrence: string | null
+        }) => {
+          const description = expense.description.length > 45 ? expense.description.substring(0, 45) + '...' : expense.description
           expensesTableData.push([
             formatDate(expense.occurrenceDate),
-            expense.description.length > 35 ? expense.description.substring(0, 35) + '...' : expense.description,
+            description,
             expense.category,
-            expense.type === 'essential' ? 'Essencial' : 'Não Essencial',
+            expense.type === 'essential' ? 'Essencial' : 'Nao Essencial',
             formatCurrency(expense.amount),
-            expense.recurrence === 'monthly' ? 'Mensal' : expense.recurrence === 'yearly' ? 'Anual' : 'Única'
+            expense.recurrence === 'monthly' ? 'Mensal' : expense.recurrence === 'yearly' ? 'Anual' : 'Unica'
           ])
         })
 
@@ -406,16 +454,17 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           body: expensesTableData.slice(1),
           theme: 'striped',
           headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
-          styles: { fontSize: 8 },
+          styles: { fontSize: 7.5, cellPadding: 2 },
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 55 },
-            2: { cellWidth: 35 },
-            3: { cellWidth: 30, halign: 'center' },
-            4: { cellWidth: 30, halign: 'right' },
-            5: { cellWidth: 25, halign: 'center' }
+            0: { cellWidth: 24, halign: 'left' },
+            1: { cellWidth: 60, halign: 'left' },
+            2: { cellWidth: 35, halign: 'left' },
+            3: { cellWidth: 28, halign: 'center' },
+            4: { cellWidth: 28, halign: 'right' },
+            5: { cellWidth: 23, halign: 'center' }
           },
-          margin: { left: margin, right: margin }
+          margin: { left: margin, right: margin },
+          tableWidth: contentWidth
         })
 
         yPosition = (doc as any).lastAutoTable.finalY + 10
@@ -429,11 +478,11 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           checkPageBreak(50)
           doc.setFontSize(14)
           doc.setFont("helvetica", "bold")
-          doc.text("Despesas por Categoria", margin, yPosition)
-          yPosition += 8
+          doc.text("Despesas por Categoria", pageWidth / 2, yPosition, { align: "center" })
+          yPosition += 10
 
           const categoryData = [
-            ['Categoria', 'Total', 'Essencial', 'Não Essencial', '% do Total']
+            ['Categoria', 'Total', 'Essencial', 'Nao Essencial', '% do Total']
           ]
 
           expenseCategoryKeys.forEach(cat => {
@@ -454,15 +503,16 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
             body: categoryData.slice(1),
             theme: 'grid',
             headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
-            styles: { fontSize: 8 },
+            styles: { fontSize: 8, cellPadding: 2.5 },
             columnStyles: {
-              0: { cellWidth: 60 },
-              1: { cellWidth: 35, halign: 'right' },
-              2: { cellWidth: 35, halign: 'right' },
-              3: { cellWidth: 35, halign: 'right' },
-              4: { cellWidth: 25, halign: 'right' }
+              0: { cellWidth: 70, halign: 'left' },
+              1: { cellWidth: 32, halign: 'right' },
+              2: { cellWidth: 32, halign: 'right' },
+              3: { cellWidth: 32, halign: 'right' },
+              4: { cellWidth: 24, halign: 'right' }
             },
-            margin: { left: margin, right: margin }
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth
           })
 
           yPosition = (doc as any).lastAutoTable.finalY + 15
@@ -471,8 +521,8 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           checkPageBreak(40)
           doc.setFontSize(14)
           doc.setFont("helvetica", "bold")
-          doc.text("Top 5 Categorias de Despesas", margin, yPosition)
-          yPosition += 8
+          doc.text("Top 5 Categorias de Despesas", pageWidth / 2, yPosition, { align: "center" })
+          yPosition += 10
 
           const top5Data = [
             ['Posição', 'Categoria', 'Valor Total', '% do Total']
@@ -495,30 +545,31 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
             body: top5Data.slice(1),
             theme: 'striped',
             headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
-            styles: { fontSize: 9 },
+            styles: { fontSize: 9, cellPadding: 3 },
             columnStyles: {
               0: { cellWidth: 25, halign: 'center' },
-              1: { cellWidth: 80 },
+              1: { cellWidth: 90, halign: 'left' },
               2: { cellWidth: 50, halign: 'right' },
               3: { cellWidth: 35, halign: 'right' }
             },
-            margin: { left: margin, right: margin }
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth
           })
 
           yPosition = (doc as any).lastAutoTable.finalY + 15
         }
       } else {
-        doc.text("Nenhuma despesa registrada neste mês.", margin, yPosition)
+        doc.text("Nenhuma despesa registrada neste mes.", pageWidth / 2, yPosition, { align: "center" })
         yPosition += 10
       }
 
-      // ========== EVOLUÇÃO MENSAL ==========
+      // ========== EVOLUCAO MENSAL ==========
       checkPageBreak(50)
       doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(124, 58, 237)
-      doc.text("4. Evolução Mensal", margin, yPosition)
-      yPosition += 10
+      doc.text("4. Evolucao Mensal", pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 12
 
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
@@ -549,26 +600,27 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         body: evolutionData.slice(1),
         theme: 'grid',
         headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
-        styles: { fontSize: 9 },
+        styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 40, halign: 'right' },
-          2: { cellWidth: 40, halign: 'right' },
-          3: { cellWidth: 40, halign: 'right' },
-          4: { cellWidth: 30, halign: 'right' }
+          0: { cellWidth: 30, halign: 'center' },
+          1: { cellWidth: 38, halign: 'right' },
+          2: { cellWidth: 38, halign: 'right' },
+          3: { cellWidth: 38, halign: 'right' },
+          4: { cellWidth: 36, halign: 'right' }
         },
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
       })
 
       yPosition = (doc as any).lastAutoTable.finalY + 15
 
-      // ========== RECOMENDAÇÕES ==========
+      // ========== RECOMENDACOES ==========
       checkPageBreak(60)
       doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(124, 58, 237)
-      doc.text("5. Recomendações e Insights", margin, yPosition)
-      yPosition += 10
+      doc.text("5. Recomendacoes e Insights", pageWidth / 2, yPosition, { align: "center" })
+      yPosition += 12
 
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
@@ -577,42 +629,50 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
       const recommendations: string[] = []
 
       if (reportData.summary.monthlyBalance < 0) {
-        recommendations.push("⚠️ Seu saldo está negativo. Considere reduzir despesas não essenciais.")
+        recommendations.push("[ATENCAO] Seu saldo esta negativo. Considere reduzir despesas nao essenciais.")
       }
 
       if (reportData.summary.savingsRate < 10) {
-        recommendations.push("💡 Sua taxa de poupança está abaixo de 10%. Tente economizar pelo menos 10-20% da renda.")
+        recommendations.push("[DICA] Sua taxa de poupanca esta abaixo de 10%. Tente economizar pelo menos 10-20% da renda.")
       } else if (reportData.summary.savingsRate >= 20) {
-        recommendations.push("✅ Excelente! Você está economizando mais de 20% da sua renda. Continue assim!")
+        recommendations.push("[EXCELENTE] Voce esta economizando mais de 20% da sua renda. Continue assim!")
       }
 
       if (reportData.summary.nonEssentialPercentage > 50) {
-        recommendations.push("📊 Mais de 50% das suas despesas são não essenciais. Revise oportunidades de economia.")
+        recommendations.push("[ANALISE] Mais de 50% das suas despesas sao nao essenciais. Revise oportunidades de economia.")
       }
 
       if (reportData.expenses.count > 0) {
         const avgExpense = reportData.summary.totalExpenses / reportData.expenses.count
         if (avgExpense > 500) {
-          recommendations.push("💰 Suas despesas individuais têm valor médio alto. Verifique se há gastos desnecessários.")
+          recommendations.push("[ATENCAO] Suas despesas individuais tem valor medio alto. Verifique se ha gastos desnecessarios.")
         }
       }
 
       if (reportData.incomes.count === 0) {
-        recommendations.push("⚠️ Nenhuma entrada registrada. Certifique-se de registrar todas as suas receitas.")
+        recommendations.push("[ATENCAO] Nenhuma entrada registrada. Certifique-se de registrar todas as suas receitas.")
       }
 
       if (reportData.expenses.count === 0) {
-        recommendations.push("⚠️ Nenhuma despesa registrada. Registre seus gastos para ter uma visão completa.")
+        recommendations.push("[ATENCAO] Nenhuma despesa registrada. Registre seus gastos para ter uma visao completa.")
       }
 
       if (recommendations.length === 0) {
-        recommendations.push("✅ Parabéns! Suas finanças estão bem organizadas. Continue mantendo o controle!")
+        recommendations.push("[PARABENS] Suas financas estao bem organizadas. Continue mantendo o controle!")
       }
 
       recommendations.forEach((rec, index) => {
-        checkPageBreak(10)
-        doc.text(`${index + 1}. ${rec}`, margin, yPosition)
-        yPosition += 8
+        checkPageBreak(12)
+        const lines = wrapText(`${index + 1}. ${rec}`, contentWidth - 5)
+        lines.forEach((line, lineIndex) => {
+          if (lineIndex === 0) {
+            doc.text(line, margin, yPosition)
+          } else {
+            doc.text(line, margin + 5, yPosition)
+          }
+          yPosition += 6
+        })
+        yPosition += 2
       })
 
       // ========== RODAPÉ ==========
@@ -680,78 +740,86 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <MonthSelector userPlan={userPlan} />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="w-full sm:w-auto">
+            <MonthSelector userPlan={userPlan} />
+          </div>
 
-          {/* Streak Badge */}
-          {data.gamification.streak > 0 && (
-            <Badge variant="outline" className="gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span className="font-semibold text-orange-600">{data.gamification.streak}</span>
-              <span className="text-xs text-orange-600/80">meses</span>
-            </Badge>
-          )}
-
-          <Badge
-            variant={isPositiveBalance ? "success" : "destructive"}
-            className="text-sm px-4 py-2 hidden sm:flex gap-2"
-          >
-            {isPositiveBalance ? (
-              <>
-                <TrendingUp className="w-4 h-4" />
-                +{savingsRate}% economia
-              </>
-            ) : (
-              <>
-                <TrendingDown className="w-4 h-4" />
-                Déficit mensal
-              </>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Streak Badge */}
+            {data.gamification.streak > 0 && (
+              <Badge variant="outline" className="gap-1.5 px-2 sm:px-3 py-1.5 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
+                <Flame className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <span className="font-semibold text-orange-600">{data.gamification.streak}</span>
+                <span className="text-xs text-orange-600/80 hidden sm:inline">meses</span>
+              </Badge>
             )}
-          </Badge>
+
+            <Badge
+              variant={isPositiveBalance ? "success" : "destructive"}
+              className="text-sm px-3 sm:px-4 py-2 gap-2"
+            >
+              {isPositiveBalance ? (
+                <>
+                  <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">+{savingsRate}% economia</span>
+                  <span className="sm:hidden">+{savingsRate}%</span>
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Déficit mensal</span>
+                  <span className="sm:hidden">Déficit</span>
+                </>
+              )}
+            </Badge>
+          </div>
         </div>
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end sm:items-center sm:gap-2">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         <Button
           variant="outline"
           size="sm"
-          className="w-full sm:w-auto gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+          className="flex-1 sm:flex-initial gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/30 min-w-0"
           onClick={() => handleOpenQuickAdd("income")}
         >
-          <Plus className="w-3.5 h-3.5" />
-          Entrada
+          <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">Entrada</span>
         </Button>
         <Button
           variant="outline"
           size="sm"
-          className="w-full sm:w-auto gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:hover:bg-rose-950/30"
+          className="flex-1 sm:flex-initial gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:hover:bg-rose-950/30 min-w-0"
           onClick={() => handleOpenQuickAdd("expense")}
         >
-          <Plus className="w-3.5 h-3.5" />
-          Despesa
+          <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">Despesa</span>
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={handleExport}
           className={cn(
-            "w-full sm:w-auto gap-1.5 transition-all text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 dark:border-purple-800 dark:hover:bg-purple-950/30",
+            "flex-1 sm:flex-initial gap-1.5 transition-all text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 dark:border-purple-800 dark:hover:bg-purple-950/30 min-w-0",
             userPlan === "free" && "opacity-70"
           )}
         >
-          {userPlan === "free" ? <Lock className="w-3.5 h-3.5" /> : <FileDown className="w-3.5 h-3.5" />}
-          Exportar
+          {userPlan === "free" ? <Lock className="w-3.5 h-3.5 flex-shrink-0" /> : <FileDown className="w-3.5 h-3.5 flex-shrink-0" />}
+          <span className="truncate">Exportar</span>
         </Button>
         
         {/* Expense Suggestions Button - Only for Pro users in the red */}
         {userPlan === "pro" && data.monthlyBalance < 0 && (
-          <ExpenseSuggestions
-            month={data.month}
-            year={data.year}
-            userPlan={userPlan}
-            monthlyBalance={data.monthlyBalance}
-          />
+          <div className="w-full sm:w-auto">
+            <ExpenseSuggestions
+              month={data.month}
+              year={data.year}
+              userPlan={userPlan}
+              monthlyBalance={data.monthlyBalance}
+            />
+          </div>
         )}
       </div>
 
@@ -760,66 +828,68 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary/5 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
 
-        <CardContent className="relative pt-8 pb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <CardContent className="relative pt-5 sm:pt-8 pb-5 sm:pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
             {/* Balance */}
-            <div className="lg:col-span-1 flex flex-col justify-center">
-              <p className="text-sm font-medium text-muted-foreground mb-2">
+            <div className="lg:col-span-1 flex flex-col justify-center pb-4 sm:pb-0 border-b sm:border-b-0 border-border/50 sm:border-none">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                 Saldo do mês
               </p>
-              <div className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${isPositiveBalance ? "text-green-600" : "text-red-600"}`}>
+              <div className={`text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight break-words ${isPositiveBalance ? "text-green-600" : "text-red-600"}`}>
                 {isPositiveBalance ? "+" : ""}{formatCurrency(data.monthlyBalance)}
               </div>
 
               {/* Comparison with previous month */}
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mt-2 sm:mt-3">
                 {data.comparison.balanceChange !== 0 && (
                   <Badge
                     variant="outline"
                     className={cn(
-                      "gap-1",
+                      "gap-1 text-xs px-2 py-0.5",
                       data.comparison.balanceChange > 0
-                        ? "bg-green-50 dark:bg-green-950/30 border-green-200 text-green-700"
-                        : "bg-red-50 dark:bg-red-950/30 border-red-200 text-red-700"
+                        ? "bg-green-50 dark:bg-green-950/30 border-green-200 text-green-700 dark:text-green-400"
+                        : "bg-red-50 dark:bg-red-950/30 border-red-200 text-red-700 dark:text-red-400"
                     )}
                   >
                     {data.comparison.balanceChange > 0 ? (
-                      <TrendingUp className="w-3 h-3" />
+                      <TrendingUp className="w-3 h-3 flex-shrink-0" />
                     ) : (
-                      <TrendingDown className="w-3 h-3" />
+                      <TrendingDown className="w-3 h-3 flex-shrink-0" />
                     )}
-                    {data.comparison.balanceChange > 0 ? "+" : ""}
-                    {data.comparison.balanceChange.toFixed(0)}% vs mês anterior
+                    <span className="whitespace-nowrap">
+                      {data.comparison.balanceChange > 0 ? "+" : ""}
+                      {data.comparison.balanceChange.toFixed(0)}% vs mês anterior
+                    </span>
                   </Badge>
                 )}
               </div>
             </div>
 
             {/* Income vs Expenses */}
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Link href="/entradas" className="group">
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-200/50 dark:border-green-800/30 hover:border-green-300 dark:hover:border-green-700 transition-all hover:scale-[1.02] cursor-pointer">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                      <ArrowUpCircle className="w-5 h-5 text-white" />
+                <div className="p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-200/50 dark:border-green-800/30 hover:border-green-300 dark:hover:border-green-700 transition-all hover:scale-[1.01] sm:hover:scale-[1.02] active:scale-[0.99] cursor-pointer">
+                  <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md sm:shadow-lg shadow-green-500/20 flex-shrink-0">
+                      <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground/60 group-hover:text-green-600 group-hover:translate-x-0.5 sm:group-hover:translate-x-1 transition-all flex-shrink-0" />
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Entradas</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 truncate">{formatCurrency(data.totalIncomes)}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Entradas</p>
+                  <p className="text-xl sm:text-xl md:text-2xl font-bold text-green-600 break-words leading-tight">{formatCurrency(data.totalIncomes)}</p>
                 </div>
               </Link>
 
               <Link href="/despesas" className="group">
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-rose-500/5 border border-red-200/50 dark:border-red-800/30 hover:border-red-300 dark:hover:border-red-700 transition-all hover:scale-[1.02] cursor-pointer">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-                      <ArrowDownCircle className="w-5 h-5 text-white" />
+                <div className="p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500/10 to-rose-500/5 border border-red-200/50 dark:border-red-800/30 hover:border-red-300 dark:hover:border-red-700 transition-all hover:scale-[1.01] sm:hover:scale-[1.02] active:scale-[0.99] cursor-pointer">
+                  <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-md sm:shadow-lg shadow-red-500/20 flex-shrink-0">
+                      <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-red-600 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground/60 group-hover:text-red-600 group-hover:translate-x-0.5 sm:group-hover:translate-x-1 transition-all flex-shrink-0" />
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Despesas</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 truncate">{formatCurrency(data.totalExpenses)}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Despesas</p>
+                  <p className="text-xl sm:text-xl md:text-2xl font-bold text-red-600 break-words leading-tight">{formatCurrency(data.totalExpenses)}</p>
                 </div>
               </Link>
             </div>
@@ -859,15 +929,19 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
                 </Button>
               </div>
             )}
-            <SimpleBarChart
-              data={data.historicalData}
-              bars={[
-                { dataKey: "entradas", color: "#22c55e", name: "Entradas" },
-                { dataKey: "despesas", color: "#ef4444", name: "Despesas" },
-              ]}
-              height={250}
-              formatter={(v) => formatCompactCurrency(v)}
-            />
+            <div className="w-full overflow-x-auto -mx-4 px-4">
+              <div className="min-w-[300px]">
+                <SimpleBarChart
+                  data={data.historicalData}
+                  bars={[
+                    { dataKey: "entradas", color: "#22c55e", name: "Entradas" },
+                    { dataKey: "despesas", color: "#ef4444", name: "Despesas" },
+                  ]}
+                  height={250}
+                  formatter={(v) => formatCompactCurrency(v)}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -888,28 +962,30 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           </CardHeader>
           <CardContent>
             {expenseDistribution.length > 0 ? (
-              <div className="flex items-center gap-8">
-                <DonutChart
-                  data={expenseDistribution}
-                  height={180}
-                  innerRadius={45}
-                  outerRadius={75}
-                />
-                <div className="space-y-3 flex-1">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+                <div className="flex-shrink-0">
+                  <DonutChart
+                    data={expenseDistribution}
+                    height={180}
+                    innerRadius={45}
+                    outerRadius={75}
+                  />
+                </div>
+                <div className="space-y-3 flex-1 w-full sm:w-auto">
                   {/* Total */}
                   <div className="pb-3 border-b">
                     <p className="text-xs text-muted-foreground mb-1">Total de Despesas</p>
-                    <p className="text-2xl font-bold">{formatCompactCurrency(data.totalExpenses)}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{formatCompactCurrency(data.totalExpenses)}</p>
                   </div>
 
                   {/* Essenciais */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-orange-500" />
+                      <div className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
                       <span className="text-sm font-medium">Essenciais</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-orange-600">{formatCompactCurrency(data.totalEssential)}</p>
+                      <p className="font-semibold text-orange-600 text-sm sm:text-base">{formatCompactCurrency(data.totalEssential)}</p>
                       <p className="text-xs text-muted-foreground">{essentialPercentage.toFixed(0)}%</p>
                     </div>
                   </div>
@@ -917,11 +993,11 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
                   {/* Não Essenciais */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <div className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
                       <span className="text-sm font-medium">Não Essenciais</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600">{formatCompactCurrency(data.totalNonEssential)}</p>
+                      <p className="font-semibold text-red-600 text-sm sm:text-base">{formatCompactCurrency(data.totalNonEssential)}</p>
                       <p className="text-xs text-muted-foreground">{nonEssentialPercentage.toFixed(0)}%</p>
                     </div>
                   </div>
@@ -1036,21 +1112,21 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         {/* Achievements */}
         <Card variant="elevated">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 flex-shrink-0">
                   <Trophy className="h-5 w-5 text-white" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <CardTitle>Conquistas</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words">
                     {unlockedAchievements.length} de {data.gamification.achievements.length} desbloqueadas
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="gap-1">
+              <Badge variant="outline" className="gap-1 flex-shrink-0">
                 <Flame className="w-3 h-3 text-orange-500" />
-                {data.gamification.streak} meses
+                <span className="whitespace-nowrap">{data.gamification.streak} meses</span>
               </Badge>
             </div>
           </CardHeader>
@@ -1130,19 +1206,19 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
         {/* Emergency Fund */}
         <Card variant="elevated">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 flex-shrink-0">
                   <Target className="h-5 w-5 text-white" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <CardTitle>Reserva de Emergência</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words">
                     Meta: {data.emergencyFund.months} meses de despesas
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="text-lg px-3">
+              <Badge variant="outline" className="text-base sm:text-lg px-3 flex-shrink-0">
                 {data.emergencyFund.progress.toFixed(1)}%
               </Badge>
             </div>
@@ -1150,31 +1226,31 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           <CardContent className="space-y-6">
             <Progress value={data.emergencyFund.progress} className="h-4" />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
                 <p className="text-xs font-medium text-muted-foreground mb-1">Acumulado</p>
-                <p className="text-xl font-bold text-blue-600">
+                <p className="text-lg sm:text-xl font-bold text-blue-600 break-words">
                   {formatCurrency(data.emergencyFund.current)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-muted/50 border border-border">
                 <p className="text-xs font-medium text-muted-foreground mb-1">Meta Ideal</p>
-                <p className="text-xl font-bold">
+                <p className="text-lg sm:text-xl font-bold break-words">
                   {formatCurrency(data.emergencyFund.ideal)}
                 </p>
               </div>
             </div>
 
             {data.emergencyFund.progress < 100 && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30">
                 <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-4 h-4 text-amber-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200 break-words">
                     Faltam {formatCurrency(data.emergencyFund.ideal - data.emergencyFund.current)}
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 break-words mt-1">
                     para atingir sua meta de segurança financeira
                   </p>
                 </div>

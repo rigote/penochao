@@ -326,28 +326,29 @@ export function DespesasClient({
             <Sparkles className="w-5 h-5 text-red-500" />
             <span className="text-sm font-medium text-red-600">Gastos</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-              <ArrowDownCircle className="w-5 h-5 text-white" />
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20 flex-shrink-0">
+              <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            Despesas
+            <span className="break-words">Despesas</span>
           </h1>
           <p className="text-muted-foreground mt-1">Controle seus gastos mensais</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <MonthSelector />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
+            <MonthSelector />
+          </div>
 
           {selectedIds.length > 0 ? (
             <Button
-              className="gap-2 shadow-sm animate-in fade-in slide-in-from-right-2"
+              className="gap-2 shadow-sm animate-in fade-in slide-in-from-right-2 w-full sm:w-auto"
               variant="destructive"
               onClick={confirmBulkDelete}
               disabled={isDeletingBulk}
             >
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Excluir ({selectedIds.length})</span>
-              <span className="sm:hidden">Excluir ({selectedIds.length})</span>
+              <Trash2 className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">Excluir ({selectedIds.length})</span>
             </Button>
           ) : (
             <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -355,8 +356,8 @@ export function DespesasClient({
               if (!open) resetForm()
             }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 shadow-md bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700">
-                  <Plus className="w-4 h-4" />
+                <Button className="gap-2 shadow-md bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 w-full sm:w-auto">
+                  <Plus className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Nova Despesa</span>
                   <span className="sm:hidden">Nova</span>
                 </Button>
@@ -519,19 +520,19 @@ export function DespesasClient({
         {/* Essenciais */}
         <Card variant="elevated" className="relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="relative pt-5 pb-5">
-            <div className="flex items-center justify-between">
-              <div>
+          <CardContent className="relative pt-4 sm:pt-5 pb-4 sm:pb-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-muted-foreground mb-1">Essenciais</p>
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-xl sm:text-2xl font-bold text-orange-600 break-words">
                   {formatCurrency(stats.essential)}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 capitalize">
+                <p className="text-xs text-muted-foreground mt-1 capitalize break-words">
                   {format(currentMonth, "MMMM", { locale: ptBR })}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <Wallet className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20 flex-shrink-0">
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -540,16 +541,16 @@ export function DespesasClient({
         {/* Não Essenciais */}
         <Card variant="elevated" className="relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="relative pt-5 pb-5">
-            <div className="flex items-center justify-between">
-              <div>
+          <CardContent className="relative pt-4 sm:pt-5 pb-4 sm:pb-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-muted-foreground mb-1">Não Essenciais</p>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-xl sm:text-2xl font-bold text-red-600 break-words">
                   {formatCurrency(stats.nonEssential)}
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-                <Zap className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20 flex-shrink-0">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -558,16 +559,16 @@ export function DespesasClient({
         {/* Total */}
         <Card variant="elevated" className="relative overflow-hidden bg-muted/30">
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="relative pt-5 pb-5">
-            <div className="flex items-center justify-between">
-              <div>
+          <CardContent className="relative pt-4 sm:pt-5 pb-4 sm:pb-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-muted-foreground mb-1">Total Geral</p>
-                <div className="text-2xl font-bold">
+                <div className="text-xl sm:text-2xl font-bold break-words">
                   {formatCurrency(stats.total)}
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center shadow-lg shadow-gray-500/20">
-                <TrendingDown className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center shadow-lg shadow-gray-500/20 flex-shrink-0">
+                <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>

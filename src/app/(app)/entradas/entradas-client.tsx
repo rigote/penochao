@@ -303,28 +303,29 @@ export function EntradasClient({
             <Sparkles className="w-5 h-5 text-green-500" />
             <span className="text-sm font-medium text-green-600">Receitas</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-              <ArrowUpCircle className="w-5 h-5 text-white" />
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20 flex-shrink-0">
+              <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            Entradas
+            <span className="break-words">Entradas</span>
           </h1>
           <p className="text-muted-foreground mt-1">Gerencie suas fontes de renda</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <MonthSelector />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
+            <MonthSelector />
+          </div>
 
           {selectedIds.length > 0 ? (
             <Button
-              className="gap-2 shadow-sm animate-in fade-in slide-in-from-right-2"
+              className="gap-2 shadow-sm animate-in fade-in slide-in-from-right-2 w-full sm:w-auto"
               variant="destructive"
               onClick={confirmBulkDelete}
               disabled={isDeletingBulk}
             >
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Excluir ({selectedIds.length})</span>
-              <span className="sm:hidden">Excluir ({selectedIds.length})</span>
+              <Trash2 className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">Excluir ({selectedIds.length})</span>
             </Button>
           ) : (
             <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -332,8 +333,8 @@ export function EntradasClient({
               if (!open) resetForm()
             }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
-                  <Plus className="w-4 h-4" />
+                <Button className="gap-2 shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 w-full sm:w-auto">
+                  <Plus className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Nova Entrada</span>
                   <span className="sm:hidden">Nova</span>
                 </Button>
@@ -464,20 +465,20 @@ export function EntradasClient({
       {/* Summary Card */}
       <Card variant="elevated" className="relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-        <CardContent className="relative pt-6 pb-6">
-          <div className="flex items-center justify-between">
-            <div>
+        <CardContent className="relative pt-4 sm:pt-6 pb-4 sm:pb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-muted-foreground mb-1">Total de Entradas</p>
-              <div className="text-3xl md:text-4xl font-bold text-green-600 tracking-tight">
+              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 tracking-tight break-words">
                 {formatCurrency(stats.total)}
               </div>
-              <p className="text-xs text-muted-foreground mt-2 capitalize">
+              <p className="text-xs text-muted-foreground mt-2 capitalize break-words">
                 Referente a {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
               </p>
             </div>
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25">
-                <TrendingUp className="w-7 h-7 text-white" />
+            <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25">
+                <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
             </div>
           </div>

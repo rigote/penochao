@@ -132,33 +132,33 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/dashboard"
-            className="p-2 hover:bg-accent rounded-full transition-colors"
+            className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent break-words">
             Painel Administrativo
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium">{session.user.name}</p>
-            <p className="text-xs text-muted-foreground">{session.user.email}</p>
+            <p className="text-sm font-medium break-words">{session.user.name}</p>
+            <p className="text-xs text-muted-foreground break-words">{session.user.email}</p>
           </div>
           {session.user.image ? (
             <img
               src={session.user.image}
               alt={session.user.name || "User"}
-              className="h-10 w-10 rounded-full border-2 border-border"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border-2 border-border flex-shrink-0"
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border">
-              <User className="h-5 w-5 text-primary" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border flex-shrink-0">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
           )}
         </div>
@@ -189,7 +189,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-accent/10 border-none shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -200,7 +200,7 @@ export default async function AdminPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words">{totalUsers}</div>
           </CardContent>
         </Card>
 
@@ -258,8 +258,8 @@ export default async function AdminPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{freeUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-xl sm:text-2xl font-bold break-words">{freeUsers}</div>
+            <p className="text-xs text-muted-foreground mt-1 break-words">
               {totalUsers > 0 ? ((freeUsers / totalUsers) * 100).toFixed(1) : "0.0"}% do total
             </p>
           </CardContent>
@@ -296,27 +296,27 @@ export default async function AdminPage() {
                 return (
                   <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {user.image ? (
                           <img
                             src={user.image}
                             alt={user.name || "User"}
-                            className="h-9 w-9 rounded-full object-cover border border-border"
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover border border-border flex-shrink-0"
                           />
                         ) : (
-                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border border-border">
-                            <span className="text-sm font-semibold text-primary">
+                          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 flex items-center justify-center border border-border flex-shrink-0">
+                            <span className="text-xs sm:text-sm font-semibold text-primary">
                               {(user.name || user.email || "?").substring(0, 2).toUpperCase()}
                             </span>
                           </div>
                         )}
-                        <span className="truncate max-w-[150px]" title={user.name || "Sem nome"}>
+                        <span className="truncate max-w-[120px] sm:max-w-[150px] break-words" title={user.name || "Sem nome"}>
                           {user.name || "Sem nome"}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      <span className="truncate max-w-[180px] block" title={user.email || ""}>
+                      <span className="truncate max-w-[150px] sm:max-w-[180px] block break-words" title={user.email || ""}>
                         {user.email}
                       </span>
                     </TableCell>
