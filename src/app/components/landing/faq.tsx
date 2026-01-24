@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     question: "Posso usar o Penochão gratuitamente?",
-    answer: "Sim! O plano Free oferece todas as funcionalidades essenciais para controlar suas finanças. Você pode fazer upgrade para o Pro quando precisar de recursos avançados como faturas ilimitadas com IA e exportação de relatórios.",
+    answer: "Sim! O plano Free oferece todas as funcionalidades essenciais para controlar suas finanças. Você pode fazer upgrade para o Pro quando precisar de recursos avançados como faturas ilimitadas com IA, relatórios mensais detalhados, identificação de gastos desnecessários com IA e análise inteligente de despesas.",
   },
   {
     question: "Como funciona a cobrança do plano Pro?",
