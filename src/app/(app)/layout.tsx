@@ -8,6 +8,7 @@ import { MobileNav } from "./components/mobile-nav"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
+import { AnalyticsProvider } from "@/app/components/analytics-provider"
 
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -93,6 +94,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Main Content */}
         <main className="flex-1 lg:pl-72">
           <div className="container py-8 px-4 lg:px-8 max-w-6xl">
+            <AnalyticsProvider />
             {children}
           </div>
         </main>

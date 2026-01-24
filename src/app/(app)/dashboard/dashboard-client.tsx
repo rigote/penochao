@@ -103,6 +103,7 @@ import autoTable from "jspdf-autotable"
 import { toast } from "sonner"
 import { FileDown } from "lucide-react"
 import { QuickAdd } from "@/app/components/shared/quick-add"
+import { trackReportExport } from "@/lib/analytics"
 
 interface Category {
   id: string
@@ -131,52 +132,510 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
     setQuickAddOpen(true)
   }
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (userPlan === "free") {
       toast.error("Funcionalidade disponível apenas no plano Pro")
       return
     }
 
-    const doc = new jsPDF()
+    try {
+      toast.loading("Gerando relatório detalhado...", { id: "export" })
+      
+      const month = String(currentMonth.getMonth() + 1)
+      const year = String(currentMonth.getFullYear())
+      const response = await fetch(`/api/reports/monthly?month=${month}&year=${year}`)
+      
+      if (!response.ok) {
+        throw new Error("Erro ao buscar dados do relatório")
+      }
 
-    // Header
-    doc.setFontSize(20)
-    doc.text("Relatório Mensal - Penochão", 14, 22)
-    doc.setFontSize(10)
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30)
-    doc.text(`Referência: ${format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}`, 14, 35)
+      const reportData = await response.json()
 
-    // Summary Table
-    autoTable(doc, {
-      startY: 45,
-      head: [['Resumo Financeiro', 'Valor']],
-      body: [
-        ['Total de Entradas', formatCurrency(data.totalIncomes)],
-        ['Despesas Essenciais', formatCurrency(data.totalEssential)],
-        ['Despesas Não Essenciais', formatCurrency(data.totalNonEssential)],
-        ['Total de Despesas', formatCurrency(data.totalExpenses)],
-        ['Saldo Final', formatCurrency(data.monthlyBalance)],
-        ['Reserva de Emergência', `${data.emergencyFund.progress.toFixed(1)}% (${formatCurrency(data.emergencyFund.current)})`],
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [124, 58, 237] }, // Purple
-    })
+      const doc = new jsPDF()
+      let yPosition = 20
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const margin = 14
+      const contentWidth = pageWidth - (margin * 2)
 
-    // Evolution Table
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 15,
-      head: [['Mês', 'Entradas', 'Despesas', 'Saldo']],
-      body: data.historicalData.map(d => [
-        d.name,
-        formatCurrency(d.entradas),
-        formatCurrency(d.despesas),
-        formatCurrency(d.saldo)
-      ]),
-      theme: 'striped',
-    })
+      // Helper function to add new page if needed
+      const checkPageBreak = (requiredSpace: number) => {
+        if (yPosition + requiredSpace > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage()
+          yPosition = 20
+          return true
+        }
+        return false
+      }
 
-    doc.save(`relatorio-penochao-${format(currentMonth, "MM-yyyy")}.pdf`)
-    toast.success("Relatório exportado com sucesso!")
+      // Helper function to format currency
+      const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }).format(value)
+      }
+
+      // Helper function to format date
+      const formatDate = (dateStr: string) => {
+        return new Date(dateStr + "T00:00:00").toLocaleDateString("pt-BR")
+      }
+
+      // ========== CAPA ==========
+      doc.setFillColor(124, 58, 237) // Purple
+      doc.rect(0, 0, pageWidth, 60, "F")
+      
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(28)
+      doc.setFont("helvetica", "bold")
+      doc.text("Relatório Financeiro Mensal", pageWidth / 2, 30, { align: "center" })
+      
+      doc.setFontSize(16)
+      doc.setFont("helvetica", "normal")
+      doc.text(reportData.period, pageWidth / 2, 45, { align: "center" })
+      
+      doc.setTextColor(0, 0, 0)
+      yPosition = 80
+
+      // Informações gerais
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, margin, yPosition)
+      yPosition += 10
+      doc.text(`Usuário: ${userName || "Usuário"}`, margin, yPosition)
+      yPosition += 15
+
+      // ========== RESUMO EXECUTIVO ==========
+      checkPageBreak(50)
+      doc.setFontSize(18)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(124, 58, 237)
+      doc.text("1. Resumo Executivo", margin, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont("helvetica", "normal")
+
+      const summaryData = [
+        ['Indicador', 'Valor', 'Análise'],
+        [
+          'Total de Entradas',
+          formatCurrency(reportData.summary.totalIncomes),
+          reportData.summary.totalIncomes > 0 ? '✓' : '⚠'
+        ],
+        [
+          'Total de Despesas',
+          formatCurrency(reportData.summary.totalExpenses),
+          reportData.summary.totalExpenses > 0 ? '✓' : '⚠'
+        ],
+        [
+          'Despesas Essenciais',
+          formatCurrency(reportData.summary.totalEssential),
+          `${reportData.summary.essentialPercentage.toFixed(1)}% do total`
+        ],
+        [
+          'Despesas Não Essenciais',
+          formatCurrency(reportData.summary.totalNonEssential),
+          `${reportData.summary.nonEssentialPercentage.toFixed(1)}% do total`
+        ],
+        [
+          'Saldo do Mês',
+          formatCurrency(reportData.summary.monthlyBalance),
+          reportData.summary.monthlyBalance >= 0 ? '✓ Positivo' : '⚠ Negativo'
+        ],
+        [
+          'Taxa de Poupança',
+          `${reportData.summary.savingsRate.toFixed(1)}%`,
+          reportData.summary.savingsRate >= 20 ? '✓ Excelente' : reportData.summary.savingsRate >= 10 ? 'Bom' : 'Pode melhorar'
+        ],
+      ]
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [summaryData[0]],
+        body: summaryData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 70 },
+          1: { cellWidth: 60, halign: 'right' },
+          2: { cellWidth: 50, halign: 'center' }
+        },
+        margin: { left: margin, right: margin }
+      })
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15
+
+      // ========== ANÁLISE DE ENTRADAS ==========
+      checkPageBreak(60)
+      doc.setFontSize(18)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(124, 58, 237)
+      doc.text("2. Análise de Entradas", margin, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont("helvetica", "normal")
+      doc.text(`Total de ${reportData.incomes.count} entrada(s) registrada(s)`, margin, yPosition)
+      yPosition += 8
+
+      if (reportData.incomes.list.length > 0) {
+        const incomesTableData = [
+          ['Data', 'Descrição', 'Categoria', 'Valor', 'Recorrência']
+        ]
+
+        reportData.incomes.list.forEach(income => {
+          incomesTableData.push([
+            formatDate(income.occurrenceDate),
+            income.description.length > 40 ? income.description.substring(0, 40) + '...' : income.description,
+            income.category,
+            formatCurrency(income.amount),
+            income.recurrence === 'monthly' ? 'Mensal' : income.recurrence === 'yearly' ? 'Anual' : 'Única'
+          ])
+        })
+
+        autoTable(doc, {
+          startY: yPosition,
+          head: [incomesTableData[0]],
+          body: incomesTableData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [34, 197, 94], textColor: [255, 255, 255], fontStyle: 'bold' },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            0: { cellWidth: 30 },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 35, halign: 'right' },
+            4: { cellWidth: 25, halign: 'center' }
+          },
+          margin: { left: margin, right: margin }
+        })
+
+        yPosition = (doc as any).lastAutoTable.finalY + 10
+
+        // Entradas por categoria
+        const categoryKeys = Object.keys(reportData.incomes.byCategory).sort((a, b) => 
+          reportData.incomes.byCategory[b].total - reportData.incomes.byCategory[a].total
+        )
+
+        if (categoryKeys.length > 0) {
+          checkPageBreak(40)
+          doc.setFontSize(14)
+          doc.setFont("helvetica", "bold")
+          doc.text("Entradas por Categoria", margin, yPosition)
+          yPosition += 8
+
+          const categoryData = [
+            ['Categoria', 'Total', '% do Total']
+          ]
+
+          categoryKeys.forEach(cat => {
+            const percentage = (reportData.incomes.byCategory[cat].total / reportData.summary.totalIncomes) * 100
+            categoryData.push([
+              cat,
+              formatCurrency(reportData.incomes.byCategory[cat].total),
+              `${percentage.toFixed(1)}%`
+            ])
+          })
+
+          autoTable(doc, {
+            startY: yPosition,
+            head: [categoryData[0]],
+            body: categoryData.slice(1),
+            theme: 'grid',
+            headStyles: { fillColor: [34, 197, 94], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 9 },
+            columnStyles: {
+              0: { cellWidth: 100 },
+              1: { cellWidth: 50, halign: 'right' },
+              2: { cellWidth: 40, halign: 'right' }
+            },
+            margin: { left: margin, right: margin }
+          })
+
+          yPosition = (doc as any).lastAutoTable.finalY + 15
+        }
+      } else {
+        doc.text("Nenhuma entrada registrada neste mês.", margin, yPosition)
+        yPosition += 10
+      }
+
+      // ========== ANÁLISE DE DESPESAS ==========
+      checkPageBreak(60)
+      doc.setFontSize(18)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(124, 58, 237)
+      doc.text("3. Análise de Despesas", margin, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont("helvetica", "normal")
+      doc.text(`Total de ${reportData.expenses.count} despesa(s) registrada(s)`, margin, yPosition)
+      yPosition += 5
+      doc.text(`Essenciais: ${reportData.expenses.essentialCount} | Não Essenciais: ${reportData.expenses.nonEssentialCount}`, margin, yPosition)
+      yPosition += 8
+
+      if (reportData.expenses.list.length > 0) {
+        const expensesTableData = [
+          ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Recorrência']
+        ]
+
+        reportData.expenses.list.forEach(expense => {
+          expensesTableData.push([
+            formatDate(expense.occurrenceDate),
+            expense.description.length > 35 ? expense.description.substring(0, 35) + '...' : expense.description,
+            expense.category,
+            expense.type === 'essential' ? 'Essencial' : 'Não Essencial',
+            formatCurrency(expense.amount),
+            expense.recurrence === 'monthly' ? 'Mensal' : expense.recurrence === 'yearly' ? 'Anual' : 'Única'
+          ])
+        })
+
+        autoTable(doc, {
+          startY: yPosition,
+          head: [expensesTableData[0]],
+          body: expensesTableData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 55 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 30, halign: 'center' },
+            4: { cellWidth: 30, halign: 'right' },
+            5: { cellWidth: 25, halign: 'center' }
+          },
+          margin: { left: margin, right: margin }
+        })
+
+        yPosition = (doc as any).lastAutoTable.finalY + 10
+
+        // Despesas por categoria
+        const expenseCategoryKeys = Object.keys(reportData.expenses.byCategory).sort((a, b) => 
+          reportData.expenses.byCategory[b].total - reportData.expenses.byCategory[a].total
+        )
+
+        if (expenseCategoryKeys.length > 0) {
+          checkPageBreak(50)
+          doc.setFontSize(14)
+          doc.setFont("helvetica", "bold")
+          doc.text("Despesas por Categoria", margin, yPosition)
+          yPosition += 8
+
+          const categoryData = [
+            ['Categoria', 'Total', 'Essencial', 'Não Essencial', '% do Total']
+          ]
+
+          expenseCategoryKeys.forEach(cat => {
+            const category = reportData.expenses.byCategory[cat]
+            const percentage = (category.total / reportData.summary.totalExpenses) * 100
+            categoryData.push([
+              cat,
+              formatCurrency(category.total),
+              formatCurrency(category.essential),
+              formatCurrency(category.nonEssential),
+              `${percentage.toFixed(1)}%`
+            ])
+          })
+
+          autoTable(doc, {
+            startY: yPosition,
+            head: [categoryData[0]],
+            body: categoryData.slice(1),
+            theme: 'grid',
+            headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 8 },
+            columnStyles: {
+              0: { cellWidth: 60 },
+              1: { cellWidth: 35, halign: 'right' },
+              2: { cellWidth: 35, halign: 'right' },
+              3: { cellWidth: 35, halign: 'right' },
+              4: { cellWidth: 25, halign: 'right' }
+            },
+            margin: { left: margin, right: margin }
+          })
+
+          yPosition = (doc as any).lastAutoTable.finalY + 15
+
+          // Top 5 categorias
+          checkPageBreak(40)
+          doc.setFontSize(14)
+          doc.setFont("helvetica", "bold")
+          doc.text("Top 5 Categorias de Despesas", margin, yPosition)
+          yPosition += 8
+
+          const top5Data = [
+            ['Posição', 'Categoria', 'Valor Total', '% do Total']
+          ]
+
+          expenseCategoryKeys.slice(0, 5).forEach((cat, index) => {
+            const category = reportData.expenses.byCategory[cat]
+            const percentage = (category.total / reportData.summary.totalExpenses) * 100
+            top5Data.push([
+              `${index + 1}º`,
+              cat,
+              formatCurrency(category.total),
+              `${percentage.toFixed(1)}%`
+            ])
+          })
+
+          autoTable(doc, {
+            startY: yPosition,
+            head: [top5Data[0]],
+            body: top5Data.slice(1),
+            theme: 'striped',
+            headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 9 },
+            columnStyles: {
+              0: { cellWidth: 25, halign: 'center' },
+              1: { cellWidth: 80 },
+              2: { cellWidth: 50, halign: 'right' },
+              3: { cellWidth: 35, halign: 'right' }
+            },
+            margin: { left: margin, right: margin }
+          })
+
+          yPosition = (doc as any).lastAutoTable.finalY + 15
+        }
+      } else {
+        doc.text("Nenhuma despesa registrada neste mês.", margin, yPosition)
+        yPosition += 10
+      }
+
+      // ========== EVOLUÇÃO MENSAL ==========
+      checkPageBreak(50)
+      doc.setFontSize(18)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(124, 58, 237)
+      doc.text("4. Evolução Mensal", margin, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont("helvetica", "normal")
+
+      const evolutionData = [
+        ['Mês', 'Entradas', 'Despesas', 'Saldo', 'Variação']
+      ]
+
+      data.historicalData.forEach((d, index) => {
+        const prevBalance = index > 0 ? data.historicalData[index - 1].saldo : 0
+        const variation = prevBalance !== 0 
+          ? ((d.saldo - prevBalance) / Math.abs(prevBalance)) * 100 
+          : d.saldo > 0 ? 100 : 0
+        
+        evolutionData.push([
+          d.name,
+          formatCurrency(d.entradas),
+          formatCurrency(d.despesas),
+          formatCurrency(d.saldo),
+          `${variation >= 0 ? '+' : ''}${variation.toFixed(1)}%`
+        ])
+      })
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [evolutionData[0]],
+        body: evolutionData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 40, halign: 'right' },
+          2: { cellWidth: 40, halign: 'right' },
+          3: { cellWidth: 40, halign: 'right' },
+          4: { cellWidth: 30, halign: 'right' }
+        },
+        margin: { left: margin, right: margin }
+      })
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15
+
+      // ========== RECOMENDAÇÕES ==========
+      checkPageBreak(60)
+      doc.setFontSize(18)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(124, 58, 237)
+      doc.text("5. Recomendações e Insights", margin, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont("helvetica", "normal")
+
+      const recommendations: string[] = []
+
+      if (reportData.summary.monthlyBalance < 0) {
+        recommendations.push("⚠️ Seu saldo está negativo. Considere reduzir despesas não essenciais.")
+      }
+
+      if (reportData.summary.savingsRate < 10) {
+        recommendations.push("💡 Sua taxa de poupança está abaixo de 10%. Tente economizar pelo menos 10-20% da renda.")
+      } else if (reportData.summary.savingsRate >= 20) {
+        recommendations.push("✅ Excelente! Você está economizando mais de 20% da sua renda. Continue assim!")
+      }
+
+      if (reportData.summary.nonEssentialPercentage > 50) {
+        recommendations.push("📊 Mais de 50% das suas despesas são não essenciais. Revise oportunidades de economia.")
+      }
+
+      if (reportData.expenses.count > 0) {
+        const avgExpense = reportData.summary.totalExpenses / reportData.expenses.count
+        if (avgExpense > 500) {
+          recommendations.push("💰 Suas despesas individuais têm valor médio alto. Verifique se há gastos desnecessários.")
+        }
+      }
+
+      if (reportData.incomes.count === 0) {
+        recommendations.push("⚠️ Nenhuma entrada registrada. Certifique-se de registrar todas as suas receitas.")
+      }
+
+      if (reportData.expenses.count === 0) {
+        recommendations.push("⚠️ Nenhuma despesa registrada. Registre seus gastos para ter uma visão completa.")
+      }
+
+      if (recommendations.length === 0) {
+        recommendations.push("✅ Parabéns! Suas finanças estão bem organizadas. Continue mantendo o controle!")
+      }
+
+      recommendations.forEach((rec, index) => {
+        checkPageBreak(10)
+        doc.text(`${index + 1}. ${rec}`, margin, yPosition)
+        yPosition += 8
+      })
+
+      // ========== RODAPÉ ==========
+      const totalPages = doc.getNumberOfPages()
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(128, 128, 128)
+        doc.text(
+          `Página ${i} de ${totalPages} | Relatório gerado pelo Penochão`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "center" }
+        )
+      }
+
+      doc.save(`relatorio-detalhado-${format(currentMonth, "MM-yyyy")}.pdf`)
+      trackReportExport("monthly_pdf")
+      toast.success("Relatório detalhado exportado com sucesso!", { id: "export" })
+    } catch (error) {
+      console.error("Error exporting report:", error)
+      toast.error("Erro ao gerar relatório. Tente novamente.", { id: "export" })
+    }
   }
 
   const isPositiveBalance = data.monthlyBalance >= 0

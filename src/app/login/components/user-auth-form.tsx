@@ -11,6 +11,7 @@ import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
 import { Icons } from "@/app/components/icons"
+import { trackLogin } from "@/lib/analytics"
 
 interface FormData {
   email: string
@@ -62,6 +63,7 @@ export function UserAuthForm({ className }: { className?: string }) {
       if (result?.error) {
         toast.error("Código inválido ou expirado.")
       } else {
+        trackLogin("otp")
         toast.success("Login realizado com sucesso!")
         router.push("/dashboard")
         router.refresh()
@@ -158,7 +160,10 @@ export function UserAuthForm({ className }: { className?: string }) {
             </div>
           </div>
           <div className="grid gap-4">
-            <Button variant="outline" type="button" disabled={isLoading} onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+            <Button variant="outline" type="button" disabled={isLoading} onClick={() => {
+              trackLogin("google")
+              signIn("google", { callbackUrl: "/dashboard" })
+            }}>
               <Icons.google className="mr-2 h-4 w-4" />
               Google
             </Button>

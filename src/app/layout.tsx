@@ -3,6 +3,8 @@ import { GeistSans } from 'geist/font/sans'
 import { ThemeProvider } from '@/app/context/theme-provider'
 import { SessionProvider } from '@/app/context/session-provider'
 import { Toaster } from 'sonner'
+import { Analytics } from '@vercel/analytics/next'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebsiteJsonLd } from '@/app/components/seo/json-ld'
 import './globals.css'
 
@@ -90,6 +92,10 @@ export default function RootLayout({
             <Toaster />
           </ThemeProvider>
         </SessionProvider>
+        <Analytics />
+        {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID} />
+        )}
       </body>
     </html>
   )
