@@ -21,42 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog"
 
-import {
-  ShoppingCart, Home, Car, Plane, Utensils, Heart, Briefcase, GraduationCap,
-  Zap, Smartphone, Wifi, Gift, Hammer, Dog, Baby, Shirt, Music, Coffee,
-  Book, DollarSign, Umbrella, Camera, Landmark, Ticket, Film, Gamepad,
-  Cross
-} from "lucide-react"
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  "shopping-cart": ShoppingCart,
-  "home": Home,
-  "car": Car,
-  "plane": Plane,
-  "utensils": Utensils,
-  "heart": Heart,
-  "briefcase": Briefcase,
-  "graduation-cap": GraduationCap,
-  "zap": Zap,
-  "smartphone": Smartphone,
-  "wifi": Wifi,
-  "gift": Gift,
-  "hammer": Hammer,
-  "dog": Dog,
-  "baby": Baby,
-  "shirt": Shirt,
-  "music": Music,
-  "coffee": Coffee,
-  "book": Book,
-  "dollar-sign": DollarSign,
-  "umbrella": Umbrella,
-  "camera": Camera,
-  "landmark": Landmark,
-  "ticket": Ticket,
-  "film": Film,
-  "gamepad": Gamepad,
-  "cross": Cross
-}
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 
 interface Category {
   id: string
@@ -145,13 +110,12 @@ export function CategoriesManager({ initialCategories, userPlan = "free" }: { in
   }
 
   const renderIcon = (iconName: string | null, color: string | null) => {
-    const IconComp = iconName && ICON_MAP[iconName] ? ICON_MAP[iconName] : ShoppingCart
     return (
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105"
         style={{ backgroundColor: color || "#8b5cf6" }}
       >
-        <IconComp className="w-5 h-5" />
+        <CategoryIcon icon={iconName} className="w-5 h-5" />
       </div>
     )
   }
@@ -335,14 +299,7 @@ export function CategoriesManager({ initialCategories, userPlan = "free" }: { in
                               className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md"
                               style={{ backgroundColor: child.color || "#8b5cf6" }}
                             >
-                              {child.icon && ICON_MAP[child.icon] ? (
-                                (() => {
-                                  const ChildIcon = ICON_MAP[child.icon]
-                                  return <ChildIcon className="w-4 h-4" />
-                                })()
-                              ) : (
-                                <ShoppingCart className="w-4 h-4" />
-                              )}
+                              <CategoryIcon icon={child.icon} className="w-4 h-4" />
                             </div>
                             <span className="text-sm font-medium">{child.name}</span>
                           </div>

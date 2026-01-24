@@ -199,12 +199,13 @@ export function CategoryFormDialog({
             )}
           </div>
 
-          {!isSubcategory && !isEditing && (
+          {!isSubcategory && (
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select
-                defaultValue={form.getValues("type")}
+                value={form.watch("type")}
                 onValueChange={(val: any) => form.setValue("type", val)}
+                disabled={isEditing && categoryToEdit?.type === "income"}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -212,9 +213,14 @@ export function CategoryFormDialog({
                 <SelectContent className="bg-white dark:bg-zinc-900 border shadow-xl z-[60]">
                   <SelectItem value="essential">Despesa Essencial</SelectItem>
                   <SelectItem value="non_essential">Despesa Não Essencial</SelectItem>
-                  <SelectItem value="income">Receita</SelectItem>
+                  {!isEditing && <SelectItem value="income">Receita</SelectItem>}
                 </SelectContent>
               </Select>
+              {isEditing && categoryToEdit?.type === "income" && (
+                <p className="text-xs text-muted-foreground">
+                  O tipo de categoria de receita não pode ser alterado
+                </p>
+              )}
             </div>
           )}
 

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { incomes, categories } from "@/db/schema/finance"
-import { eq, desc, and, or, gte, lte, sql, isNull } from "drizzle-orm"
+import { eq, desc, and, or, gte, lte, sql, isNull, inArray } from "drizzle-orm"
 import { EntradasClient } from "./entradas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 import { decrypt, decryptNumber } from "@/lib/encryption"
@@ -54,6 +54,7 @@ async function getIncomes(userId: string, date: Date, page: number) {
       categoryName: categories.name,
       categoryIcon: categories.icon,
       categoryColor: categories.color,
+      categoryParentId: categories.parentId,
       createdAt: incomes.createdAt,
     })
     .from(incomes)
@@ -63,12 +64,50 @@ async function getIncomes(userId: string, date: Date, page: number) {
     .limit(ITEMS_PER_PAGE)
     .offset(offset)
 
+  // Fetch parent categories for items that need icon/color fallback
+  const categoryIdsNeedingParent = data
+    .filter(i => i.categoryParentId && !i.categoryIcon)
+    .map(i => i.categoryParentId)
+    .filter((id): id is string => id !== null)
+
+  const parentCategoriesMap = new Map<string, { icon: string | null; color: string | null }>()
+  if (categoryIdsNeedingParent.length > 0) {
+    const parentCats = await db
+      .select({
+        id: categories.id,
+        icon: categories.icon,
+        color: categories.color,
+      })
+      .from(categories)
+      .where(inArray(categories.id, categoryIdsNeedingParent))
+    
+    parentCats.forEach(cat => {
+      parentCategoriesMap.set(cat.id, { icon: cat.icon, color: cat.color })
+    })
+  }
+
   return {
-    data: data.map(i => ({
-      ...i,
-      description: decrypt(i.description),
-      amount: decryptNumber(i.amount),
-    })),
+    data: data.map(i => {
+      // Use parent category icon/color if current category doesn't have one
+      let finalIcon = i.categoryIcon
+      let finalColor = i.categoryColor
+      
+      if (!finalIcon && i.categoryParentId) {
+        const parent = parentCategoriesMap.get(i.categoryParentId)
+        if (parent) {
+          finalIcon = parent.icon
+          finalColor = parent.color
+        }
+      }
+
+      return {
+        ...i,
+        description: decrypt(i.description),
+        amount: decryptNumber(i.amount),
+        categoryIcon: finalIcon,
+        categoryColor: finalColor,
+      }
+    }),
     pagination: {
       currentPage: page,
       totalPages,
