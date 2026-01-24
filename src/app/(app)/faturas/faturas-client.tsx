@@ -40,6 +40,7 @@ interface ExtractedData {
   description?: string
   amount?: number
   date?: string
+  transactionType?: "income" | "expense" // NEW: Distinguishes income from expenses
   categoryType?: "essential" | "non_essential"
   recurrence?: "monthly" | "once"
   confidence?: number
@@ -55,6 +56,7 @@ interface Invoice {
   editedDescription: string
   editedAmount: string
   editedDate: string
+  editedTransactionType: "income" | "expense" // NEW: User can change transaction type
   editedType: "essential" | "non_essential"
   editedCategoryId: string
   editedRecurrence: string
@@ -149,27 +151,63 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
           throw new Error("Erro ao processar fatura")
         }
 
-        const { data } = await response.json()
+        const responseData = await response.json()
+        const { data, isBankStatement, transactionCount } = responseData
 
         setCurrentUsage(prev => prev + 1) // Increment usage tracking
 
-        const newInvoice: Invoice = {
-          id: Date.now().toString() + Math.random(),
-          fileName: file.name,
-          status: "processed",
-          extractedData: data,
-          createdAt: new Date().toISOString(),
-          // Pre-fill editable fields
-          editedDescription: data.description || "",
-          editedAmount: data.amount?.toString() || "0",
-          editedDate: data.date || new Date().toISOString().split('T')[0],
-          editedType: data.categoryType || "essential",
-          editedCategoryId: "",
-          editedRecurrence: data.recurrence || "once"
-        }
+        // Check if this is a bank statement with multiple transactions
+        if (isBankStatement && data.transactions && Array.isArray(data.transactions) && data.transactions.length > 1) {
+          // Create multiple invoices for each transaction
+          const newInvoices: Invoice[] = data.transactions.map((transaction: any, index: number) => {
+            // Convert negative amounts to positive (extratos bancários usam negativos para despesas)
+            const amount = Math.abs(transaction.amount || 0)
+            return {
+              id: `${Date.now()}-${index}-${Math.random()}`,
+              fileName: `${file.name} (Transação ${index + 1}/${data.transactions.length})`,
+              status: "processed" as const,
+              extractedData: transaction,
+              createdAt: new Date().toISOString(),
+              // Pre-fill editable fields
+              editedDescription: transaction.description || "",
+              editedAmount: amount.toString(),
+              editedDate: transaction.date || new Date().toISOString().split('T')[0],
+              editedTransactionType: transaction.transactionType || "expense",
+              editedType: transaction.categoryType || "essential",
+              editedCategoryId: "",
+              editedRecurrence: transaction.recurrence || "once"
+            }
+          })
 
-        setInvoices(prev => [newInvoice, ...prev]) // Add to top
-        processedCount++
+          setInvoices(prev => [...newInvoices, ...prev]) // Add all to top
+          processedCount += newInvoices.length
+          toast.success(`${newInvoices.length} transações extraídas de ${file.name}`)
+        } else {
+          // Single transaction (backward compatibility or single invoice)
+          const transaction = data.transactions?.[0] || data
+          
+          // Convert negative amounts to positive (extratos bancários usam negativos para despesas)
+          const amount = Math.abs(transaction.amount || 0)
+          
+          const newInvoice: Invoice = {
+            id: Date.now().toString() + Math.random(),
+            fileName: file.name,
+            status: "processed",
+            extractedData: transaction,
+            createdAt: new Date().toISOString(),
+            // Pre-fill editable fields
+            editedDescription: transaction.description || "",
+            editedAmount: amount.toString(),
+            editedDate: transaction.date || new Date().toISOString().split('T')[0],
+            editedTransactionType: transaction.transactionType || "expense",
+            editedType: transaction.categoryType || "essential",
+            editedCategoryId: "",
+            editedRecurrence: transaction.recurrence || "once"
+          }
+
+          setInvoices(prev => [newInvoice, ...prev]) // Add to top
+          processedCount++
+        }
 
       } catch (error) {
         console.error("Upload error:", error)
@@ -183,6 +221,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
           editedDescription: "",
           editedAmount: "0",
           editedDate: new Date().toISOString().split('T')[0],
+          editedTransactionType: "expense",
           editedType: "essential",
           editedCategoryId: "",
           editedRecurrence: "once"
@@ -193,7 +232,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
 
     setUploading(false)
     if (processedCount > 0) {
-      toast.success(`${processedCount} fatura(s) processada(s) com sucesso!`)
+      toast.success(`${processedCount} transação(ões) processada(s) com sucesso!`)
     }
   }
 
@@ -210,30 +249,65 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
 
   const saveInvoice = async (invoice: Invoice) => {
     try {
-      const response = await fetch("/api/expenses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: invoice.editedDescription,
-          amount: parseFloat(invoice.editedAmount),
-          occurrenceDate: invoice.editedDate,
-          type: invoice.editedType,
-          categoryId: invoice.editedCategoryId || undefined,
-          recurrence: invoice.editedRecurrence
-        }),
-      })
+      // Convert amount to positive (extratos bancários podem vir com valores negativos)
+      const amount = Math.abs(parseFloat(invoice.editedAmount) || 0)
+      
+      if (amount <= 0) {
+        toast.error("Valor deve ser maior que zero")
+        return false
+      }
 
-      if (!response.ok) throw new Error("Falha ao salvar")
+      const transactionType = invoice.editedTransactionType || invoice.extractedData?.transactionType || "expense"
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoice.id ? { ...inv, status: "saved" as const } : inv
-      ))
+      // Create income or expense based on transaction type
+      if (transactionType === "income") {
+        const response = await fetch("/api/incomes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: invoice.editedDescription,
+            amount: amount,
+            occurrenceDate: invoice.editedDate,
+            categoryId: invoice.editedCategoryId || undefined,
+            recurrence: invoice.editedRecurrence
+          }),
+        })
 
-      toast.success("Despesa salva com sucesso!")
-      return true
+        if (!response.ok) throw new Error("Falha ao salvar")
+
+        setInvoices(prev => prev.map(inv =>
+          inv.id === invoice.id ? { ...inv, status: "saved" as const } : inv
+        ))
+
+        toast.success("Entrada salva com sucesso!")
+        return true
+      } else {
+        // Expense
+        const response = await fetch("/api/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: invoice.editedDescription,
+            amount: amount,
+            occurrenceDate: invoice.editedDate,
+            type: invoice.editedType,
+            categoryId: invoice.editedCategoryId || undefined,
+            recurrence: invoice.editedRecurrence
+          }),
+        })
+
+        if (!response.ok) throw new Error("Falha ao salvar")
+
+        setInvoices(prev => prev.map(inv =>
+          inv.id === invoice.id ? { ...inv, status: "saved" as const } : inv
+        ))
+
+        toast.success("Despesa salva com sucesso!")
+        return true
+      }
     } catch (error) {
-      console.error("Error saving expense:", error)
-      toast.error("Erro ao salvar despesa")
+      console.error("Error saving transaction:", error)
+      toast.error("Erro ao salvar transação")
       return false
     }
   }
@@ -561,28 +635,54 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
 
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Classificação</Label>
+                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tipo de Transação</Label>
                           <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
                             <Button
                               type="button"
                               variant="ghost"
-                              className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedType === "essential" ? "bg-white dark:bg-zinc-800 shadow-sm text-red-600" : "text-muted-foreground hover:bg-white/50"}`}
-                              onClick={() => updateInvoice(invoice.id, "editedType", "essential")}
+                              className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedTransactionType === "income" ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600" : "text-muted-foreground hover:bg-white/50"}`}
+                              onClick={() => updateInvoice(invoice.id, "editedTransactionType", "income")}
                             >
-                              <Wallet className="w-4 h-4" />
-                              Essencial
+                              <span className="text-lg">↑</span>
+                              Entrada
                             </Button>
                             <Button
                               type="button"
                               variant="ghost"
-                              className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedType === "non_essential" ? "bg-white dark:bg-zinc-800 shadow-sm text-orange-500" : "text-muted-foreground hover:bg-white/50"}`}
-                              onClick={() => updateInvoice(invoice.id, "editedType", "non_essential")}
+                              className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedTransactionType === "expense" ? "bg-white dark:bg-zinc-800 shadow-sm text-red-600" : "text-muted-foreground hover:bg-white/50"}`}
+                              onClick={() => updateInvoice(invoice.id, "editedTransactionType", "expense")}
                             >
-                              <ShoppingBag className="w-4 h-4" />
-                              Não Essencial
+                              <span className="text-lg">↓</span>
+                              Despesa
                             </Button>
                           </div>
                         </div>
+
+                        {invoice.editedTransactionType === "expense" && (
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Classificação</Label>
+                            <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedType === "essential" ? "bg-white dark:bg-zinc-800 shadow-sm text-red-600" : "text-muted-foreground hover:bg-white/50"}`}
+                                onClick={() => updateInvoice(invoice.id, "editedType", "essential")}
+                              >
+                                <Wallet className="w-4 h-4" />
+                                Essencial
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className={`flex-1 rounded-lg gap-2 font-medium transition-all ${invoice.editedType === "non_essential" ? "bg-white dark:bg-zinc-800 shadow-sm text-orange-500" : "text-muted-foreground hover:bg-white/50"}`}
+                                onClick={() => updateInvoice(invoice.id, "editedType", "non_essential")}
+                              >
+                                <ShoppingBag className="w-4 h-4" />
+                                Não Essencial
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -595,14 +695,20 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {getFilteredCategories(invoice.editedType).map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    <span className="flex items-center gap-2">
-                                      <CategoryIcon icon={cat.icon} className="w-4 h-4" />
-                                      <span>{cat.name}</span>
-                                    </span>
-                                  </SelectItem>
-                                ))}
+                                {categories
+                                  .filter(cat => 
+                                    invoice.editedTransactionType === "income" 
+                                      ? cat.type === "income"
+                                      : cat.type === invoice.editedType
+                                  )
+                                  .map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                      <span className="flex items-center gap-2">
+                                        <CategoryIcon icon={cat.icon} className="w-4 h-4" />
+                                        <span>{cat.name}</span>
+                                      </span>
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -632,7 +738,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
                         className="rounded-full px-8 bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90 gap-2 shadow-lg hover:shadow-xl transition-all"
                       >
                         <Save className="w-4 h-4" />
-                        Salvar Despesa
+                        {invoice.editedTransactionType === "income" ? "Salvar Entrada" : "Salvar Despesa"}
                       </Button>
                     </div>
                   </div>
@@ -672,7 +778,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
                     <div>
                       <p className="font-medium text-green-900 dark:text-green-100">{invoice.editedDescription || invoice.fileName}</p>
                       <p className="text-xs text-green-700 dark:text-green-300">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(invoice.editedAmount))} • {new Date(invoice.editedDate).toLocaleDateString('pt-BR')}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(parseFloat(invoice.editedAmount) || 0))} • {new Date(invoice.editedDate).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>

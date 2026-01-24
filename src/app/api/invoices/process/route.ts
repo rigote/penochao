@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractInvoiceData } from "@/lib/gemini";
+import { extractBankStatementData, type ExtractedBankStatementData } from "@/lib/gemini";
 import { extractText } from "unpdf";
 import { getServerSession } from "next-auth";
 import { db } from "@/db";
@@ -160,10 +160,10 @@ export async function POST(req: NextRequest) {
 
     // Process with Gemini
     const inputTokensEstimate = Math.ceil(text.length / 4);
-    const data = await extractInvoiceData(text);
+    const bankStatementData = await extractBankStatementData(text);
 
     // Log Usage
-    const outputTokensEstimate = JSON.stringify(data).length / 4;
+    const outputTokensEstimate = JSON.stringify(bankStatementData).length / 4;
     const inputCost = (inputTokensEstimate / 1_000_000) * COST_PER_MILLION_INPUT;
     const outputCost = (outputTokensEstimate / 1_000_000) * COST_PER_MILLION_OUTPUT;
     const totalCost = inputCost + outputCost;
@@ -178,17 +178,32 @@ export async function POST(req: NextRequest) {
       costBrl: (totalCost).toFixed(6),
     });
 
-    // Register invoice to track usage for free plan limit
-    await db.insert(invoices).values({
-      userId: user.id,
-      fileName: file.name,
-      fileUrl: "", // Not storing file, just tracking usage
-      extractedData: encryptJSON(data),
-      status: "processed",
-      processedAt: new Date(),
-    });
+    // For backward compatibility, if there's only one transaction, return it in the old format
+    // Otherwise, return the full bank statement data
+    if (bankStatementData.transactions.length === 1) {
+      const singleTransaction = bankStatementData.transactions[0];
+      
+      // Register invoice to track usage for free plan limit
+      await db.insert(invoices).values({
+        userId: user.id,
+        fileName: file.name,
+        fileUrl: "", // Not storing file, just tracking usage
+        extractedData: encryptJSON(singleTransaction),
+        status: "processed",
+        processedAt: new Date(),
+      });
 
-    return NextResponse.json({ data });
+      return NextResponse.json({ data: singleTransaction });
+    } else {
+      // Multiple transactions - return the full bank statement data
+      // Note: We're not creating individual invoice records here to avoid hitting limits
+      // The frontend will handle creating multiple invoices
+      return NextResponse.json({ 
+        data: bankStatementData,
+        isBankStatement: true,
+        transactionCount: bankStatementData.transactions.length
+      });
+    }
   } catch (error) {
     console.error("Error processing invoice:", error);
     return NextResponse.json(

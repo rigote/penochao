@@ -2,18 +2,19 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { addMonths, format, parse, subMonths, isSameMonth } from "date-fns"
+import { addMonths, format, parse, subMonths, isSameMonth, startOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Lock } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/app/components/ui/button"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/app/components/ui/popover"
-import { Calendar } from "@/app/components/ui/calendar"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select"
 import { toast } from "sonner"
 
 interface MonthSelectorProps {
@@ -68,6 +69,39 @@ export function MonthSelector({ className, userPlan = "free" }: MonthSelectorPro
     handleMonthChange(addMonths(date, 1))
   }
 
+  // Generate month and year options
+  const currentYear = date.getFullYear()
+  const currentMonth = date.getMonth()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+
+  // Generate years (current year ± 2 years)
+  const years = Array.from({ length: 5 }, (_, i) => todayYear - 2 + i)
+  
+  // Generate months
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const monthDate = new Date(2024, i, 1)
+    return {
+      value: i.toString(),
+      label: format(monthDate, "MMMM", { locale: ptBR })
+    }
+  })
+
+  const handleMonthSelect = (monthIndex: string) => {
+    const newDate = new Date(currentYear, parseInt(monthIndex), 1)
+    handleMonthChange(newDate)
+  }
+
+  const handleYearSelect = (yearStr: string) => {
+    const newYear = parseInt(yearStr)
+    const newDate = new Date(newYear, currentMonth, 1)
+    handleMonthChange(newDate)
+  }
+
+  const isDateDisabled = (checkDate: Date) => {
+    return userPlan === "free" && !isSameMonth(checkDate, today)
+  }
+
   return (
     <div className={cn("flex items-center gap-1 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm", className)}>
       <Button
@@ -84,49 +118,74 @@ export function MonthSelector({ className, userPlan = "free" }: MonthSelectorPro
       </Button>
 
       {mounted ? (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-[160px] justify-center text-center font-medium h-8 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition-all",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-              <span className="capitalize text-sm">
-                {format(date, "MMMM yyyy", { locale: ptBR })}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleMonthChange}
-              initialFocus
-              locale={ptBR}
-              disabled={(day) => userPlan === "free" && !isSameMonth(day, today)}
-            />
-            {userPlan === "free" && (
-              <div className="p-3 bg-muted/30 border-t text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-                <Lock className="w-3 h-3" />
-                <span>Navegação restrita ao plano Free</span>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
+        <div className="flex items-center gap-2 px-2">
+          <Select
+            value={currentMonth.toString()}
+            onValueChange={handleMonthSelect}
+            disabled={userPlan === "free" && currentYear === todayYear}
+          >
+            <SelectTrigger className="w-[140px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
+              <SelectValue>
+                <span className="capitalize">
+                  {format(date, "MMMM", { locale: ptBR })}
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month, index) => {
+                const monthDate = new Date(currentYear, index, 1)
+                const disabled = isDateDisabled(monthDate)
+                return (
+                  <SelectItem 
+                    key={month.value} 
+                    value={month.value}
+                    disabled={disabled}
+                    className={disabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    <span className="capitalize">{month.label}</span>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={currentYear.toString()}
+            onValueChange={handleYearSelect}
+            disabled={userPlan === "free"}
+          >
+            <SelectTrigger className="w-[80px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
+              <SelectValue>{currentYear}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => {
+                const yearDate = new Date(year, currentMonth, 1)
+                const disabled = userPlan === "free" && year !== todayYear
+                return (
+                  <SelectItem 
+                    key={year} 
+                    value={year.toString()}
+                    disabled={disabled}
+                    className={disabled ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {year}
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
       ) : (
-        <Button
-          variant="ghost"
-          className="w-[160px] justify-center text-center font-medium h-8 rounded-lg"
-          disabled
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-          <span className="capitalize text-sm">
-            {format(date, "MMMM yyyy", { locale: ptBR })}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2 px-2">
+          <div className="w-[140px] h-8 flex items-center justify-center">
+            <span className="capitalize text-sm font-medium">
+              {format(date, "MMMM", { locale: ptBR })}
+            </span>
+          </div>
+          <div className="w-[80px] h-8 flex items-center justify-center">
+            <span className="text-sm font-medium">{currentYear}</span>
+          </div>
+        </div>
       )}
 
       <Button
