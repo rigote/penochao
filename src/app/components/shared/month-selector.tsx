@@ -117,76 +117,63 @@ export function MonthSelector({ className, userPlan = "free" }: MonthSelectorPro
         {userPlan === "free" ? <Lock className="h-3 w-3" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
-      {mounted ? (
-        <div className="flex items-center gap-2 px-2">
-          <Select
-            value={currentMonth.toString()}
-            onValueChange={handleMonthSelect}
-            disabled={userPlan === "free" && currentYear === todayYear}
-          >
-            <SelectTrigger className="w-[140px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
-              <SelectValue>
-                <span className="capitalize">
-                  {format(date, "MMMM", { locale: ptBR })}
-                </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((month, index) => {
-                const monthDate = new Date(currentYear, index, 1)
-                const disabled = isDateDisabled(monthDate)
-                return (
-                  <SelectItem 
-                    key={month.value} 
-                    value={month.value}
-                    disabled={disabled}
-                    className={disabled ? "opacity-50 cursor-not-allowed" : ""}
-                  >
-                    <span className="capitalize">{month.label}</span>
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
+      <div className="flex items-center gap-2 px-2" suppressHydrationWarning>
+        <Select
+          value={currentMonth.toString()}
+          onValueChange={handleMonthSelect}
+          disabled={userPlan === "free" && currentYear === todayYear || !mounted}
+        >
+          <SelectTrigger className="w-[140px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
+            <SelectValue>
+              <span className="capitalize">
+                {format(date, "MMMM", { locale: ptBR })}
+              </span>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((month, index) => {
+              const monthDate = new Date(currentYear, index, 1)
+              const disabled = isDateDisabled(monthDate)
+              return (
+                <SelectItem 
+                  key={month.value} 
+                  value={month.value}
+                  disabled={disabled}
+                  className={disabled ? "opacity-50 cursor-not-allowed" : ""}
+                >
+                  <span className="capitalize">{month.label}</span>
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
 
-          <Select
-            value={currentYear.toString()}
-            onValueChange={handleYearSelect}
-            disabled={userPlan === "free"}
-          >
-            <SelectTrigger className="w-[80px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
-              <SelectValue>{currentYear}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((year) => {
-                const yearDate = new Date(year, currentMonth, 1)
-                const disabled = userPlan === "free" && year !== todayYear
-                return (
-                  <SelectItem 
-                    key={year} 
-                    value={year.toString()}
-                    disabled={disabled}
-                    className={disabled ? "opacity-50 cursor-not-allowed" : ""}
-                  >
-                    {year}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 px-2">
-          <div className="w-[140px] h-8 flex items-center justify-center">
-            <span className="capitalize text-sm font-medium">
-              {format(date, "MMMM", { locale: ptBR })}
-            </span>
-          </div>
-          <div className="w-[80px] h-8 flex items-center justify-center">
-            <span className="text-sm font-medium">{currentYear}</span>
-          </div>
-        </div>
-      )}
+        <Select
+          value={currentYear.toString()}
+          onValueChange={handleYearSelect}
+          disabled={userPlan === "free" || !mounted}
+        >
+          <SelectTrigger className="w-[80px] h-8 border-0 bg-transparent hover:bg-white dark:hover:bg-zinc-800 font-medium text-sm">
+            <SelectValue>{currentYear}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((year) => {
+              const yearDate = new Date(year, currentMonth, 1)
+              const disabled = userPlan === "free" && year !== todayYear
+              return (
+                <SelectItem 
+                  key={year} 
+                  value={year.toString()}
+                  disabled={disabled}
+                  className={disabled ? "opacity-50 cursor-not-allowed" : ""}
+                >
+                  {year}
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Button
         variant="ghost"
