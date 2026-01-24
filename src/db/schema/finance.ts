@@ -73,7 +73,7 @@ export const expenses = pgTable("expense", {
     .references(() => users.id, { onDelete: "cascade" }),
   categoryId: uuid("category_id").references(() => categories.id),
   description: text("description").notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: text("amount").notNull(), // Changed from decimal to text to support encryption
   occurrenceDate: date("occurrence_date").notNull(),
   type: categoryTypeEnum("type").notNull(),
   recurrence: recurrenceEnum("recurrence").default("once"),
@@ -114,6 +114,36 @@ export const userSettings = pgTable("user_setting", {
     precision: 12,
     scale: 2,
   }).default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+// Expense suggestions cache table
+export const expenseSuggestions = pgTable("expense_suggestion", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  month: text("month").notNull(), // Format: "YYYY-MM"
+  suggestions: jsonb("suggestions").notNull(), // Array of ExpenseSuggestion
+  totalPotentialSavings: decimal("total_potential_savings", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  summary: text("summary").notNull(),
+  expensesHash: text("expenses_hash").notNull(), // Hash of expenses to detect changes
+  monthlyBalance: decimal("monthly_balance", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  totalIncomes: decimal("total_incomes", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  totalExpenses: decimal("total_expenses", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
@@ -165,6 +195,13 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   user: one(users, {
     fields: [userSettings.userId],
+    references: [users.id],
+  }),
+}))
+
+export const expenseSuggestionsRelations = relations(expenseSuggestions, ({ one }) => ({
+  user: one(users, {
+    fields: [expenseSuggestions.userId],
     references: [users.id],
   }),
 }))

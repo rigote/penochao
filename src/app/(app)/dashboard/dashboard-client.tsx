@@ -29,6 +29,7 @@ import {
   Plus
 } from "lucide-react"
 import { MonthSelector } from "@/app/components/shared/month-selector"
+import { ExpenseSuggestions } from "@/app/components/shared/expense-suggestions"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -252,7 +253,7 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end sm:items-center sm:gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -283,6 +284,16 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           {userPlan === "free" ? <Lock className="w-3.5 h-3.5" /> : <FileDown className="w-3.5 h-3.5" />}
           Exportar
         </Button>
+        
+        {/* Expense Suggestions Button - Only for Pro users in the red */}
+        {userPlan === "pro" && data.monthlyBalance < 0 && (
+          <ExpenseSuggestions
+            month={data.month}
+            year={data.year}
+            userPlan={userPlan}
+            monthlyBalance={data.monthlyBalance}
+          />
+        )}
       </div>
 
       {/* Main Balance Card */}

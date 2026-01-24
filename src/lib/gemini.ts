@@ -291,3 +291,240 @@ ${text}
     };
   }
 }
+
+// Expense suggestion interfaces
+export interface ExpenseSuggestion {
+  description: string;
+  currentAmount: number;
+  savingsAmount: number;
+  priority: "high" | "medium" | "low";
+  reason: string;
+  category?: string;
+  recurrence?: "monthly" | "once";
+}
+
+export interface ExpenseAnalysisData {
+  suggestions: ExpenseSuggestion[];
+  totalPotentialSavings: number;
+  summary: string;
+}
+
+const expenseSuggestionSchema: Schema = {
+  description: "Dados de sugestão de gasto",
+  type: SchemaType.OBJECT,
+  properties: {
+    description: {
+      type: SchemaType.STRING,
+      description: "Descrição do gasto que pode ser cortado ou reduzido (em português)",
+      nullable: false,
+    },
+    currentAmount: {
+      type: SchemaType.NUMBER,
+      description: "Valor mensal atual gasto neste item",
+      nullable: false,
+    },
+    savingsAmount: {
+      type: SchemaType.NUMBER,
+      description: "Valor que pode ser economizado cortando ou reduzindo este gasto",
+      nullable: false,
+    },
+    priority: {
+      type: SchemaType.STRING,
+      description: "Nível de prioridade: 'high' para cortes fáceis com grande impacto, 'medium' para impacto moderado, 'low' para economias pequenas",
+      enum: ["high", "medium", "low"],
+      format: "enum",
+      nullable: false,
+    },
+    reason: {
+      type: SchemaType.STRING,
+      description: "Breve explicação do porquê este gasto pode ser cortado (em português, ex: 'Assinatura não utilizada', 'Pode ser substituído por alternativa gratuita', 'Luxo não essencial')",
+      nullable: false,
+    },
+    category: {
+      type: SchemaType.STRING,
+      description: "Categoria do gasto (em português, ex: 'Streaming', 'Delivery', 'Academia', 'Compras')",
+      nullable: true,
+    },
+    recurrence: {
+      type: SchemaType.STRING,
+      description: "Se é um gasto recorrente mensal ou único",
+      enum: ["monthly", "once"],
+      format: "enum",
+      nullable: true,
+    },
+  },
+  required: ["description", "currentAmount", "savingsAmount", "priority", "reason"],
+};
+
+const expenseAnalysisSchema: Schema = {
+  description: "Análise de gastos com sugestões",
+  type: SchemaType.OBJECT,
+  properties: {
+    suggestions: {
+      type: SchemaType.ARRAY,
+      description: "Array de sugestões de gastos, ordenadas por prioridade (alta para baixa)",
+      items: expenseSuggestionSchema,
+      nullable: false,
+    },
+    totalPotentialSavings: {
+      type: SchemaType.NUMBER,
+      description: "Valor total que pode ser economizado se todas as sugestões de prioridade alta e média forem seguidas",
+      nullable: false,
+    },
+    summary: {
+      type: SchemaType.STRING,
+      description: "Breve resumo da situação financeira e recomendações (em português)",
+      nullable: false,
+    },
+  },
+  required: ["suggestions", "totalPotentialSavings", "summary"],
+};
+
+export async function analyzeExpensesForSavings(
+  expenses: Array<{ description: string; amount: number; type: "essential" | "non_essential"; recurrence: "monthly" | "once"; category?: string }>,
+  totalIncome: number,
+  totalExpenses: number,
+  monthlyBalance: number
+): Promise<ExpenseAnalysisData> {
+  // Only analyze if user is in the red (negative balance)
+  if (monthlyBalance >= 0) {
+    return {
+      suggestions: [],
+      totalPotentialSavings: 0,
+      summary: "Seu saldo está positivo! Continue assim."
+    };
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: expenseAnalysisSchema,
+    },
+  });
+
+  // Filter to non-essential expenses for suggestions
+  const nonEssentialExpenses = expenses.filter(e => e.type === "non_essential");
+  
+  // If no non-essential expenses, suggest looking at essential ones
+  const expensesToAnalyze = nonEssentialExpenses.length > 0 ? nonEssentialExpenses : expenses;
+
+  const prompt = `Você é um consultor financeiro especializado em ajudar brasileiros endividados. O CARTÃO DE CRÉDITO é o principal vilão do endividamento no Brasil (83,6% dos endividados).
+
+SITUAÇÃO:
+- Renda Mensal: R$ ${totalIncome.toFixed(2)}
+- Gastos Mensais: R$ ${totalExpenses.toFixed(2)}
+- Saldo Mensal: R$ ${monthlyBalance.toFixed(2)} (NEGATIVO - gastando mais do que ganha)
+- Déficit: R$ ${Math.abs(monthlyBalance).toFixed(2)}
+
+GASTOS PARA ANALISAR:
+${expensesToAnalyze.map((e, i) => {
+  // Identificar se é gasto com cartão de crédito
+  const isCreditCard = e.description.toLowerCase().includes('fatura') || 
+                       e.description.toLowerCase().includes('cartão') ||
+                       e.description.toLowerCase().includes('credito') ||
+                       e.description.toLowerCase().includes('pay') ||
+                       e.description.toLowerCase().includes('rscss') ||
+                       e.description.toLowerCase().includes('ifood') ||
+                       e.description.toLowerCase().includes('uber') ||
+                       e.description.toLowerCase().includes('netflix') ||
+                       e.description.toLowerCase().includes('spotify') ||
+                       e.description.toLowerCase().includes('amazon') ||
+                       e.description.toLowerCase().includes('magazine') ||
+                       e.description.toLowerCase().includes('shopping')
+  
+  return `${i + 1}. ${e.description} - R$ ${e.amount.toFixed(2)}/mês (${e.type === 'essential' ? 'essencial' : 'não essencial'}, ${e.recurrence === 'monthly' ? 'mensal' : 'única vez'}${isCreditCard ? ', CARTÃO DE CRÉDITO' : ''}${e.category ? `, ${e.category}` : ''})`
+}).join('\n')}
+
+FOCO PRINCIPAL: CARTÃO DE CRÉDITO
+O cartão de crédito é responsável por 83,6% das dívidas dos brasileiros. Identifique especialmente:
+- Gastos recorrentes no cartão (assinaturas, parcelamentos)
+- Uso do cartão para despesas do dia a dia (delivery, compras pequenas)
+- Parcelamentos desnecessários
+- Faturas altas com múltiplos gastos pequenos
+
+GASTOS SUPÉRFLUOS QUE MAIS PREJUDICAM BRASILEIROS (prioridade):
+1. **ASSINATURAS RECORRENTES NO CARTÃO** (ALTA PRIORIDADE):
+   - Streaming (Netflix, Spotify, Amazon Prime, Disney+, HBO Max)
+   - Academia não utilizada
+   - Apps de assinatura (Tinder Gold, apps de produtividade)
+   - Serviços de nuvem pagos (Dropbox, iCloud storage extra)
+   - Assinaturas de revistas/jornais digitais
+
+2. **DELIVERY E COMIDA FORA** (ALTA PRIORIDADE):
+   - iFood, Uber Eats, Rappi (delivery de comida)
+   - Restaurantes frequentes
+   - Lanches e cafés fora de casa
+   - Padarias e conveniências
+
+3. **COMPRAS POR IMPULSO NO CARTÃO** (MÉDIA/ALTA PRIORIDADE):
+   - Compras online (Amazon, Magazine Luiza, Americanas)
+   - Roupas e acessórios desnecessários
+   - Eletrônicos parcelados sem necessidade
+   - Produtos de beleza/cosméticos em excesso
+
+4. **PARCELAMENTOS DESNECESSÁRIOS** (ALTA PRIORIDADE):
+   - Parcelas de compras que poderiam ser pagas à vista
+   - Múltiplos parcelamentos simultâneos
+   - Juros embutidos em parcelamentos
+
+5. **SERVIÇOS NÃO UTILIZADOS** (MÉDIA PRIORIDADE):
+   - Planos de celular com dados excessivos
+   - Seguros desnecessários
+   - Serviços bancários pagos (anuidades, pacotes)
+
+DIRETRIZES DE PRIORIDADE ESPECÍFICAS:
+- **ALTA PRIORIDADE**: 
+  * Gastos recorrentes no cartão (R$ 30+): assinaturas, delivery frequente, parcelamentos
+  * Fácil de cortar imediatamente (cancelar assinatura, parar delivery)
+  * Alto impacto (economia de R$ 50+ ao mês)
+  
+- **MÉDIA PRIORIDADE**:
+  * Gastos no cartão que podem ser reduzidos (delivery ocasional, compras menores)
+  * Economia moderada (R$ 20-50)
+  * Requer mudança de hábito mas é viável
+
+- **BAIXA PRIORIDADE**:
+  * Gastos pequenos (< R$ 20)
+  * Mais difíceis de cortar
+  * Menor impacto individual
+
+ESTRATÉGIA DE ANÁLISE:
+1. **PRIMEIRO**: Identifique TODOS os gastos com cartão de crédito (procure por palavras-chave: FATURA, PAY, RSCSS, IFOOD, NETFLIX, etc)
+2. **SEGUNDO**: Priorize gastos RECORRENTES no cartão (mensais) - estes são os mais perigosos
+3. **TERCEIRO**: Foque em assinaturas e delivery - são os maiores vilões silenciosos
+4. **QUARTO**: Identifique parcelamentos que poderiam ser evitados
+
+IMPORTANTE:
+- DÊ PRIORIDADE ABSOLUTA a gastos identificados como "CARTÃO DE CRÉDITO"
+- Seja específico: "Assinatura Netflix no cartão - R$ 45,90/mês" em vez de apenas "Netflix"
+- Mencione o impacto: "Se cortar este gasto, economiza R$ X por mês"
+- Seja direto e prático: "Cancele a assinatura" em vez de "considere cancelar"
+- Não sugira cortar gastos essenciais (aluguel, contas básicas, alimentação básica)
+- Limite a 5-7 sugestões principais, priorizando maior impacto
+- Calcule totalPotentialSavings como soma das economias de prioridade alta + média
+- Todas as respostas devem estar em PORTUGUÊS (descrição, motivo, categoria, resumo)
+
+EXEMPLOS DE SUGESTÕES BEM FEITAS:
+- "Assinatura Netflix no cartão - R$ 45,90/mês" (Alta) - "Assinatura de streaming não essencial. Pode ser substituída por alternativas gratuitas ou cancelada temporariamente."
+- "iFood recorrente - R$ 200/mês" (Alta) - "Delivery frequente. Cozinhar em casa pode economizar até 70% do valor gasto."
+- "Parcelamento iPhone - R$ 300/mês" (Média) - "Parcelamento de eletrônico. Considere quitar ou reduzir parcelas se possível."
+
+Retorne as sugestões em ordem de prioridade (alta para baixa), dando preferência absoluta a gastos com cartão de crédito.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const textResponse = response.text();
+    const parsed = JSON.parse(textResponse) as ExpenseAnalysisData;
+    
+    return parsed;
+  } catch (error) {
+    console.error("Error calling Gemini API for expense analysis:", error);
+    return {
+      suggestions: [],
+      totalPotentialSavings: 0,
+      summary: "Erro ao analisar gastos. Tente novamente mais tarde."
+    };
+  }
+}
