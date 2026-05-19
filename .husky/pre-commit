@@ -1,7 +1,9 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+if ! command -v node >/dev/null 2>&1; then
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+fi
 
 echo "Running pre-commit checks..."
 
-pnpm type-check
-pnpm test --runInBand
+tsc --noEmit
+jest --runInBand
