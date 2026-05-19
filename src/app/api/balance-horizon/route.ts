@@ -43,7 +43,68 @@ export async function GET(request: Request) {
   const startDateStr = format(rangeStart, "yyyy-MM-dd")
   const endDateStr = format(rangeEnd, "yyyy-MM-dd")
 
-  // Fetch all incomes and expenses in the range
+  // Fetch PAST transactions to calculate the true starting balance
+  const [pastIncomes, pastExpenses] = await Promise.all([
+    db
+      .select({ amount: incomes.amount, recurrence: incomes.recurrence, occurrenceDate: incomes.occurrenceDate })
+      .from(incomes)
+      .where(
+        and(
+          eq(incomes.userId, user.id),
+          lte(incomes.occurrenceDate, format(new Date(rangeStart.getTime() - 86400000), "yyyy-MM-dd"))
+        )
+      ),
+    db
+      .select({ amount: expenses.amount, recurrence: expenses.recurrence, occurrenceDate: expenses.occurrenceDate })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, user.id),
+          lte(expenses.occurrenceDate, format(new Date(rangeStart.getTime() - 86400000), "yyyy-MM-dd"))
+        )
+      ),
+  ])
+
+  // Calculate initial balance from all past transactions
+  let initialBalance = 0
+
+  for (const income of pastIncomes) {
+    try {
+      const amount = parseFloat(decryptNumber(income.amount))
+      if (income.recurrence === "monthly") {
+        const start = new Date(income.occurrenceDate + "T00:00:00")
+        let occurrences = 0
+        let current = new Date(start)
+        while (current < rangeStart) {
+          occurrences++
+          current.setMonth(current.getMonth() + 1)
+        }
+        initialBalance += amount * occurrences
+      } else {
+        initialBalance += amount
+      }
+    } catch { /* skip */ }
+  }
+
+  for (const expense of pastExpenses) {
+    try {
+      const amount = parseFloat(decryptNumber(expense.amount))
+      if (expense.recurrence === "monthly") {
+        const start = new Date(expense.occurrenceDate + "T00:00:00")
+        let occurrences = 0
+        let current = new Date(start)
+        while (current < rangeStart) {
+          occurrences++
+          current.setMonth(current.getMonth() + 1)
+        }
+        initialBalance -= amount * occurrences
+      } else {
+        initialBalance -= amount
+      }
+    } catch { /* skip */ }
+  }
+
+  // Fetch all incomes and expenses in the CURRENT range
   const [allIncomes, allExpenses] = await Promise.all([
     db
       .select({
@@ -147,9 +208,18 @@ export async function GET(request: Request) {
     try {
       const amount = parseFloat(decryptNumber(income.amount))
       const origDay = parseInt(income.occurrenceDate.split("-")[2])
+      const startDateObj = new Date(income.occurrenceDate + "T00:00:00")
 
       for (let m = 0; m < monthsCount; m++) {
         const monthDate = addMonths(rangeStart, m)
+        // Skip if this month is before the transaction even started
+        if (
+          monthDate.getFullYear() < startDateObj.getFullYear() ||
+          (monthDate.getFullYear() === startDateObj.getFullYear() && monthDate.getMonth() < startDateObj.getMonth())
+        ) {
+          continue
+        }
+
         const year = monthDate.getFullYear()
         const month = monthDate.getMonth()
         const lastDay = new Date(year, month + 1, 0).getDate()
@@ -170,9 +240,18 @@ export async function GET(request: Request) {
     try {
       const amount = parseFloat(decryptNumber(expense.amount))
       const origDay = parseInt(expense.occurrenceDate.split("-")[2])
+      const startDateObj = new Date(expense.occurrenceDate + "T00:00:00")
 
       for (let m = 0; m < monthsCount; m++) {
         const monthDate = addMonths(rangeStart, m)
+        // Skip if this month is before the transaction even started
+        if (
+          monthDate.getFullYear() < startDateObj.getFullYear() ||
+          (monthDate.getFullYear() === startDateObj.getFullYear() && monthDate.getMonth() < startDateObj.getMonth())
+        ) {
+          continue
+        }
+
         const year = monthDate.getFullYear()
         const month = monthDate.getMonth()
         const lastDay = new Date(year, month + 1, 0).getDate()
@@ -198,7 +277,7 @@ export async function GET(request: Request) {
     }>
   }> = []
 
-  let runningBalance = 0
+  let runningBalance = initialBalance
 
   for (let m = 0; m < monthsCount; m++) {
     const monthDate = addMonths(rangeStart, m)
