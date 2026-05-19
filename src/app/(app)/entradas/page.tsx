@@ -6,6 +6,7 @@ import { eq, desc, and, or, gte, lte, sql, isNull, inArray } from "drizzle-orm"
 import { EntradasClient } from "./entradas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 import { decrypt, decryptNumber } from "@/lib/encryption"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 const ITEMS_PER_PAGE = 10
 
@@ -188,6 +189,9 @@ export default async function EntradasPage({ searchParams }: PageProps) {
 
   if (!user) redirect("/login")
 
+  const dbUser = await resolveEffectiveUserPlan(user)
+  const userPlan = dbUser.plan === "pro" ? "pro" : "free"
+
   const currentMonth = params.month ? parse(params.month, "yyyy-MM", new Date()) : new Date()
   const page = Number(params.page) || 1
 
@@ -205,6 +209,7 @@ export default async function EntradasPage({ searchParams }: PageProps) {
         stats={stats}
         categories={categoriesData}
         currentMonth={currentMonth}
+        userPlan={userPlan}
       />
     </div>
   )

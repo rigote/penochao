@@ -6,6 +6,7 @@ import { eq, and, desc, or, gte, lte, sql, isNull, inArray } from "drizzle-orm"
 import { DespesasClient } from "./despesas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 import { decrypt, decryptNumber } from "@/lib/encryption"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 const ITEMS_PER_PAGE = 10
 
@@ -219,6 +220,9 @@ export default async function DespesasPage({ searchParams }: PageProps) {
 
   if (!user) redirect("/login")
 
+  const dbUser = await resolveEffectiveUserPlan(user)
+  const userPlan = dbUser.plan === "pro" ? "pro" : "free"
+
   const currentMonth = params.month ? parse(params.month, "yyyy-MM", new Date()) : new Date()
   const page = Number(params.page) || 1
   const type = (params.type as ExpenseType | "all") || "all"
@@ -238,6 +242,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
         categories={[...categoriesData.essential, ...categoriesData.nonEssential]}
         currentMonth={currentMonth}
         currentType={type}
+        userPlan={userPlan}
       />
     </div>
   )

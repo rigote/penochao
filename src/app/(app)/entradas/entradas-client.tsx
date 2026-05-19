@@ -94,6 +94,7 @@ interface EntradasClientProps {
   currentMonth: Date
   pagination: PaginationData
   stats: Stats
+  userPlan?: "free" | "pro"
 }
 
 const formatCurrency = (value: string | number) => {
@@ -113,7 +114,8 @@ export function EntradasClient({
   categories,
   currentMonth,
   pagination,
-  stats
+  stats,
+  userPlan = "free"
 }: EntradasClientProps) {
   const router = useRouter()
   const incomes = initialIncomes
@@ -314,7 +316,7 @@ export function EntradasClient({
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <div className="w-full sm:w-auto">
-            <MonthSelector />
+            <MonthSelector userPlan={userPlan} />
           </div>
 
           {selectedIds.length > 0 ? (

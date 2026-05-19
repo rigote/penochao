@@ -103,6 +103,7 @@ interface DespesasClientProps {
   pagination: PaginationData
   stats: Stats
   currentType: "all" | "essential" | "non_essential"
+  userPlan?: "free" | "pro"
 }
 
 const formatCurrency = (value: string | number) => {
@@ -123,7 +124,8 @@ export function DespesasClient({
   currentMonth,
   pagination,
   stats,
-  currentType
+  currentType,
+  userPlan = "free"
 }: DespesasClientProps) {
   const router = useRouter()
   const expenses = initialExpenses
@@ -337,7 +339,7 @@ export function DespesasClient({
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <div className="w-full sm:w-auto">
-            <MonthSelector />
+            <MonthSelector userPlan={userPlan} />
           </div>
 
           {selectedIds.length > 0 ? (

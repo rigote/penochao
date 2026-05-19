@@ -21,7 +21,6 @@ import {
   Moon,
   LucideIcon,
   ChevronRight,
-  MessageSquarePlus,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -192,17 +191,7 @@ export function MobileNav({ navItems, user }: { navItems: NavItem[], user: User 
               })}
 
               <div className="pt-2">
-                <FeedbackDialog>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-left outline-none"
-                  >
-                    <div className="flex items-center justify-center w-5 h-5">
-                      <MessageSquarePlus className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <span className="flex-1">Feedback</span>
-                  </button>
-                </FeedbackDialog>
+                <FeedbackDialog onOpen={() => setMobileMenuOpen(false)} />
               </div>
             </div>
           </nav>
