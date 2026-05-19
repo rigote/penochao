@@ -60,12 +60,33 @@ que representam buraco financeiro acumulado.
 `renda media - custo essencial`
 
 Serve para responder: "sem o caos das dividas antigas, minha vida basica fecha?"
+Na tela do mes atual, o custo essencial usado deve ser o custo essencial do mes
+em analise, para nao diluir um mes problematico com meses anteriores vazios ou
+incompletos.
 
 ### Saldo Real
 
 `renda media - todas as despesas`
 
 Serve para responder: "olhando tudo, sobra dinheiro de verdade?"
+Na tela do mes atual, as despesas usadas devem ser as despesas do mes em analise.
+A media de despesas pode ser exibida como contexto, mas nao deve definir o risco
+quando o mes atual ja esta negativo.
+
+### Valor Para Colocar O Mes Em Ordem
+
+`ceil(max(0, -saldo real) / 100) * 100`
+
+Serve para responder: "quanto dinheiro a mais precisaria entrar, ou deixar de
+sair, para o mes atual fechar no zero?". Esse valor nao e o total das despesas;
+ele e apenas a diferenca entre a renda media e as saidas ja registradas no mes.
+O valor e arredondado para cima em blocos de R$ 100 para evitar orientar a pessoa
+a ficar no limite exato.
+
+Para responder "quanto preciso para organizar a vida financeira toda", o sistema
+precisa de saldos abertos de dividas, faturas, atrasos e negociacoes, com status
+de quitado/pendente. Despesas historicas comuns nao devem ser somadas como valor
+necessario hoje, porque podem representar gastos ja pagos.
 
 ## Fluxo
 
@@ -74,14 +95,15 @@ Serve para responder: "olhando tudo, sobra dinheiro de verdade?"
 3. Sistema separa essenciais, dividas/cartao, dia a dia e estilo de vida.
 4. Sistema mostra risco financeiro.
 5. Sistema mostra saldo de sobrevivencia e saldo real.
-6. Sistema entrega proximo passo recomendado.
-7. Sistema orienta o que falta para melhorar o diagnostico.
+6. Sistema mostra o valor necessario em maos para organizar as saidas do mes atual.
+7. Sistema entrega proximo passo recomendado.
+8. Sistema orienta o que falta para melhorar o diagnostico.
 
 ## Regras De Negocio
 
 - Usar ultimos 4 meses para reduzir distorcao de um mes isolado.
 - Ignorar meses sem renda apenas no calculo de media de renda, quando houver outros meses com renda.
-- Classificar como divida/cartao quando descricao ou categoria indicar fatura, cartao, emprestimo, financiamento, parcela, renegociacao ou juros.
+- Classificar como divida/cartao quando descricao, categoria ou categoria-pai indicar fatura, cartao, credito, banco/cartao conhecido, emprestimo, financiamento, parcela, renegociacao ou juros.
 - Saldo de sobrevivencia deve ignorar dividas/cartao temporariamente.
 - Isolar dividas nao significa orientar a nao pagar; significa diagnosticar sem misturar tudo.
 - Diagnostico deve ser direto e sem julgamento.

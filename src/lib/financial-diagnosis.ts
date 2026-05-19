@@ -1,5 +1,6 @@
 import { subMonths, startOfMonth, endOfMonth, format } from "date-fns"
 import { and, eq, gte, lte } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { db } from "@/db"
 import { categories, expenses, incomes } from "@/db/schema/finance"
 import { decrypt, decryptNumber } from "@/lib/encryption"
@@ -27,6 +28,7 @@ export interface FinancialDiagnosis {
   averageTotalExpenses: number
   survivalBalance: number
   realBalance: number
+  cashNeededToday: number
   committedIncomePercent: number
   essentialIncomePercent: number
   debtIncomePercent: number
@@ -41,18 +43,28 @@ export type FinancialDiagnosisSummary = Omit<FinancialDiagnosis, "currentMonth" 
 
 const debtWords = [
   "cartao",
-  "cartão",
+  "cartoes",
   "fatura",
+  "credito",
+  "credit card",
+  "card",
   "emprestimo",
-  "empréstimo",
   "financiamento",
   "renegociacao",
-  "renegociação",
   "parcela",
   "parcelamento",
   "cheque especial",
   "juros",
   "atraso",
+  "nubank",
+  "itaucard",
+  "hipercard",
+  "mastercard",
+  "visa",
+  "elo",
+  "amex",
+  "american express",
+  "c6",
 ]
 
 const dayToDayWords = [
@@ -70,19 +82,30 @@ const dayToDayWords = [
 ]
 
 function normalize(value: string | null | undefined) {
-  return (value || "").toLowerCase()
+  return (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
 }
 
 function includesAny(text: string, words: string[]) {
-  return words.some((word) => text.includes(word))
+  return words.some((word) => {
+    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    return new RegExp(`(^|[^a-z0-9])${escapedWord}($|[^a-z0-9])`).test(text)
+  })
 }
 
 export function classifyExpense(input: {
   description: string
   type: "essential" | "non_essential"
   categoryName: string | null
+  parentCategoryName?: string | null
 }) {
-  const haystack = `${normalize(input.description)} ${normalize(input.categoryName)}`
+  const haystack = [
+    input.description,
+    input.categoryName,
+    input.parentCategoryName,
+  ].map(normalize).join(" ")
 
   if (includesAny(haystack, debtWords)) {
     return "debt" as const
@@ -102,6 +125,11 @@ export function classifyExpense(input: {
 export function average(values: number[]) {
   if (values.length === 0) return 0
   return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+export function roundUpCashBuffer(value: number) {
+  if (value <= 0) return 0
+  return Math.ceil(value / 100) * 100
 }
 
 export function getRiskLevel(input: {
@@ -175,6 +203,7 @@ export function buildNarrative(input: {
 }
 
 export function summarizeFinancialDiagnosis(history: DiagnosisMonth[]): FinancialDiagnosisSummary {
+  const currentMonth = history[history.length - 1]
   const monthsWithIncome = history.filter((month) => month.income > 0)
   const incomeBase = monthsWithIncome.length > 0 ? monthsWithIncome : history
 
@@ -182,11 +211,15 @@ export function summarizeFinancialDiagnosis(history: DiagnosisMonth[]): Financia
   const averageEssentialCost = average(history.map((month) => month.essential))
   const averageDebtCost = average(history.map((month) => month.debt))
   const averageTotalExpenses = average(history.map((month) => month.totalExpenses))
-  const survivalBalance = averageIncome - averageEssentialCost
-  const realBalance = averageIncome - averageTotalExpenses
-  const committedIncomePercent = averageIncome > 0 ? (averageTotalExpenses / averageIncome) * 100 : 0
-  const essentialIncomePercent = averageIncome > 0 ? (averageEssentialCost / averageIncome) * 100 : 0
-  const debtIncomePercent = averageIncome > 0 ? (averageDebtCost / averageIncome) * 100 : 0
+  const currentEssentialCost = currentMonth?.essential ?? 0
+  const currentDebtCost = currentMonth?.debt ?? 0
+  const currentTotalExpenses = currentMonth?.totalExpenses ?? 0
+  const survivalBalance = averageIncome - currentEssentialCost
+  const realBalance = averageIncome - currentTotalExpenses
+  const cashNeededToday = roundUpCashBuffer(Math.max(0, -realBalance))
+  const committedIncomePercent = averageIncome > 0 ? (currentTotalExpenses / averageIncome) * 100 : 0
+  const essentialIncomePercent = averageIncome > 0 ? (currentEssentialCost / averageIncome) * 100 : 0
+  const debtIncomePercent = averageIncome > 0 ? (currentDebtCost / averageIncome) * 100 : 0
   const riskLevel = getRiskLevel({
     averageIncome,
     survivalBalance,
@@ -220,6 +253,7 @@ export function summarizeFinancialDiagnosis(history: DiagnosisMonth[]): Financia
     averageTotalExpenses,
     survivalBalance,
     realBalance,
+    cashNeededToday,
     committedIncomePercent,
     essentialIncomePercent,
     debtIncomePercent,
@@ -231,6 +265,7 @@ export function summarizeFinancialDiagnosis(history: DiagnosisMonth[]): Financia
 
 export async function buildFinancialDiagnosis(userId: string, referenceDate = new Date()): Promise<FinancialDiagnosis> {
   const months = Array.from({ length: 4 }, (_, index) => subMonths(referenceDate, 3 - index))
+  const parentCategories = alias(categories, "parent_categories")
 
   const history = await Promise.all(
     months.map(async (date): Promise<DiagnosisMonth> => {
@@ -254,9 +289,11 @@ export async function buildFinancialDiagnosis(userId: string, referenceDate = ne
           amount: expenses.amount,
           type: expenses.type,
           categoryName: categories.name,
+          parentCategoryName: parentCategories.name,
         })
         .from(expenses)
         .leftJoin(categories, eq(expenses.categoryId, categories.id))
+        .leftJoin(parentCategories, eq(categories.parentId, parentCategories.id))
         .where(
           and(
             eq(expenses.userId, userId),
@@ -282,6 +319,7 @@ export async function buildFinancialDiagnosis(userId: string, referenceDate = ne
               description,
               type: row.type === "essential" ? "essential" : "non_essential",
               categoryName: row.categoryName,
+              parentCategoryName: row.parentCategoryName,
             })
 
             acc[bucket] += amount

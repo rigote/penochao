@@ -5,6 +5,7 @@ jest.mock("@/db", () => ({
 import {
   classifyExpense,
   getRiskLevel,
+  roundUpCashBuffer,
   summarizeFinancialDiagnosis,
   type DiagnosisMonth,
 } from "./financial-diagnosis"
@@ -50,6 +51,33 @@ describe("financial diagnosis rules", () => {
       ).toBe("debt")
     })
 
+    it("classifies credit card expenses from category names and parent categories", () => {
+      expect(
+        classifyExpense({
+          description: "Compra do mês",
+          type: "non_essential",
+          categoryName: "Cartão de Crédito",
+        })
+      ).toBe("debt")
+
+      expect(
+        classifyExpense({
+          description: "Compra parcelada",
+          type: "non_essential",
+          categoryName: "Nubank",
+          parentCategoryName: "Cartões",
+        })
+      ).toBe("debt")
+
+      expect(
+        classifyExpense({
+          description: "Pagamento Mastercard",
+          type: "essential",
+          categoryName: "Moradia",
+        })
+      ).toBe("debt")
+    })
+
     it("preserves essential expenses when they are not debt-like", () => {
       expect(
         classifyExpense({
@@ -58,6 +86,24 @@ describe("financial diagnosis rules", () => {
           categoryName: "Moradia",
         })
       ).toBe("essential")
+    })
+
+    it("does not match card brand fragments inside unrelated words", () => {
+      expect(
+        classifyExpense({
+          description: "Revisão do veículo",
+          type: "non_essential",
+          categoryName: "Veículo",
+        })
+      ).toBe("lifestyle")
+
+      expect(
+        classifyExpense({
+          description: "Cabelo",
+          type: "non_essential",
+          categoryName: "Salão",
+        })
+      ).toBe("lifestyle")
     })
 
     it("detects day-to-day expenses from common descriptions or categories", () => {
@@ -147,8 +193,17 @@ describe("financial diagnosis rules", () => {
     })
   })
 
+  describe("roundUpCashBuffer", () => {
+    it("rounds positive cash needs up to the next hundred", () => {
+      expect(roundUpCashBuffer(2948.01)).toBe(3000)
+      expect(roundUpCashBuffer(3000)).toBe(3000)
+      expect(roundUpCashBuffer(1)).toBe(100)
+      expect(roundUpCashBuffer(0)).toBe(0)
+    })
+  })
+
   describe("summarizeFinancialDiagnosis", () => {
-    it("ignores zero-income months when calculating average income but keeps expenses in averages", () => {
+    it("ignores zero-income months for income average while using current expenses for balances", () => {
       const summary = summarizeFinancialDiagnosis([
         month({ month: "2026-01", income: 0, essential: 1000, debt: 300 }),
         month({ month: "2026-02", income: 3000, essential: 1200, debt: 500 }),
@@ -159,7 +214,48 @@ describe("financial diagnosis rules", () => {
       expect(summary.averageIncome).toBe(4000)
       expect(summary.averageEssentialCost).toBe(1250)
       expect(summary.averageDebtCost).toBe(525)
-      expect(summary.survivalBalance).toBe(2750)
+      expect(summary.survivalBalance).toBe(2700)
+    })
+
+    it("does not dilute a high-spend current month with quieter previous months", () => {
+      const summary = summarizeFinancialDiagnosis([
+        month({ month: "2026-01", income: 10000, essential: 0, debt: 0, lifestyle: 0 }),
+        month({ month: "2026-02", income: 10000, essential: 0, debt: 0, lifestyle: 0 }),
+        month({ month: "2026-03", income: 10000, essential: 0, debt: 0, lifestyle: 0 }),
+        month({ month: "2026-04", income: 10000, essential: 1800, debt: 2200, lifestyle: 9000 }),
+      ])
+
+      expect(summary.averageIncome).toBe(10000)
+      expect(summary.averageTotalExpenses).toBe(3250)
+      expect(summary.realBalance).toBe(-3000)
+      expect(summary.cashNeededToday).toBe(3000)
+      expect(summary.committedIncomePercent).toBe(130)
+      expect(summary.riskLevel).toBe("alert")
+      expect(summary.headline).toContain("fecha negativo")
+    })
+
+    it("rounds the extra cash needed up to leave a small comfort margin", () => {
+      const summary = summarizeFinancialDiagnosis([
+        month({ income: 10098.76, essential: 0 }),
+        month({ income: 10098.76, essential: 0 }),
+        month({ income: 10098.76, essential: 0 }),
+        month({ income: 10098.76, essential: 1793.08, debt: 2228.21, lifestyle: 9025.48 }),
+      ])
+
+      expect(summary.realBalance).toBeCloseTo(-2948.01)
+      expect(summary.cashNeededToday).toBe(3000)
+    })
+
+    it("does not ask for extra cash when the current month is already positive", () => {
+      const summary = summarizeFinancialDiagnosis([
+        month({ income: 5000, essential: 1000, debt: 500 }),
+        month({ income: 5000, essential: 1000, debt: 500 }),
+        month({ income: 5000, essential: 1000, debt: 500 }),
+        month({ income: 5000, essential: 1000, debt: 500 }),
+      ])
+
+      expect(summary.realBalance).toBe(3500)
+      expect(summary.cashNeededToday).toBe(0)
     })
 
     it("returns a debt-focused narrative when basic life closes but real balance is negative", () => {
