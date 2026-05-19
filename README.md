@@ -51,7 +51,7 @@ cp .env.example .env.local
 2. Configure o banco de dados PostgreSQL
 3. Execute as migrações do Drizzle:
    ```bash
-   pnpm db:push
+   pnpm db:migrate
    ```
 
 ## 🚀 Desenvolvimento
@@ -88,7 +88,8 @@ pnpm format
 - `pnpm format:check` - Verifica a formatação do código
 - `pnpm type-check` - Verifica a tipagem TypeScript
 - `pnpm db:generate` - Gera as migrações do Drizzle
-- `pnpm db:push` - Aplica as migrações no banco de dados
+- `pnpm db:migrate` - Executa as migrações versionadas no banco de dados
+- `pnpm db:push` - Sincroniza o schema diretamente (útil em ambiente local)
 - `pnpm db:studio` - Abre o Drizzle Studio
 - `pnpm email` - Inicia o servidor de preview de emails
 
