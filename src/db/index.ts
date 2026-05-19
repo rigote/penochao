@@ -15,6 +15,11 @@ neonConfig.fetchConnectionCache = true
 const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema, ...couponsSchema, ...stripeSchema }
 
 const sql = neon(process.env.DATABASE_URL!)
+
+// Backward-compatibility guard for environments that haven't applied the
+// `0005_add_pro_trial_used_at` migration yet.
+void sql`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "pro_trial_used_at" timestamp`
+
 export const db = drizzle(sql, { schema })
 
 // Types
