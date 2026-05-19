@@ -5,7 +5,8 @@ import { stripe } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
 import { coupons, couponRedemptions } from "@/db/schema/coupons"
-import { eq, sql } from "drizzle-orm"
+import { stripeWebhookEvents } from "@/db/schema/stripe"
+import { and, eq, sql } from "drizzle-orm"
 
 // Helper to safely get current_period_end from subscription
 function getSubscriptionPeriodEnd(subscription: Stripe.Subscription | Stripe.Response<Stripe.Subscription>): Date | null {
@@ -55,6 +56,53 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("Webhook signature verification failed:", err)
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
+  }
+
+  const [claimedEvent] = await db
+    .insert(stripeWebhookEvents)
+    .values({
+      id: event.id,
+      type: event.type,
+      status: "processing",
+      updatedAt: new Date(),
+    })
+    .onConflictDoNothing()
+    .returning({ id: stripeWebhookEvents.id })
+
+  if (!claimedEvent) {
+    const existingEvent = await db.query.stripeWebhookEvents.findFirst({
+      where: eq(stripeWebhookEvents.id, event.id),
+    })
+
+    if (existingEvent?.status === "processed") {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
+    if (existingEvent?.status === "processing") {
+      return NextResponse.json(
+        { received: false, duplicate: true, status: "processing" },
+        { status: 409 }
+      )
+    }
+
+    const [retryEvent] = await db
+      .update(stripeWebhookEvents)
+      .set({
+        status: "processing",
+        error: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(stripeWebhookEvents.id, event.id),
+          eq(stripeWebhookEvents.status, "failed")
+        )
+      )
+      .returning({ id: stripeWebhookEvents.id })
+
+    if (!retryEvent) {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
   }
 
   try {
@@ -219,9 +267,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await db
+      .update(stripeWebhookEvents)
+      .set({
+        status: "processed",
+        processedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(stripeWebhookEvents.id, event.id))
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Webhook processing error:", error)
+    await db
+      .update(stripeWebhookEvents)
+      .set({
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown webhook error",
+        updatedAt: new Date(),
+      })
+      .where(eq(stripeWebhookEvents.id, event.id))
+
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }

@@ -1,3 +1,5 @@
+import { PLAN_PRICES } from "@/config/plans"
+
 export function OrganizationJsonLd() {
   const organizationSchema = {
     '@context': 'https://schema.org',
@@ -42,7 +44,7 @@ export function SoftwareApplicationJsonLd() {
       {
         '@type': 'Offer',
         name: 'Pro Mensal',
-        price: '19.90',
+        price: PLAN_PRICES.proMonthly.amount.toFixed(2),
         priceCurrency: 'BRL',
         description: 'Plano Pro com faturas ilimitadas',
         priceValidUntil: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
@@ -50,7 +52,7 @@ export function SoftwareApplicationJsonLd() {
       {
         '@type': 'Offer',
         name: 'Pro Anual',
-        price: '190.00',
+        price: PLAN_PRICES.proAnnual.amount.toFixed(2),
         priceCurrency: 'BRL',
         description: 'Plano Pro anual com 20% de desconto',
         priceValidUntil: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],

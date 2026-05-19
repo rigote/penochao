@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button"
 import { Check, X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { PLAN_PRICES } from "@/config/plans"
 
 const plans = {
   free: {
@@ -32,8 +33,8 @@ const plans = {
   pro: {
     name: "Pro",
     description: "Low ticket para cobrir IA, banco e te ajudar de verdade",
-    monthlyPrice: 19.90,
-    annualPrice: 190.00,
+    monthlyPrice: PLAN_PRICES.proMonthly.amount,
+    annualPrice: PLAN_PRICES.proAnnual.amount,
     features: [
       { text: "Dashboard completo", included: true },
       { text: "Categorias personalizadas", included: true },

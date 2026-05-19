@@ -11,6 +11,7 @@ import { Label } from "@/app/components/ui/label"
 import { Separator } from "@/app/components/ui/separator"
 import { Save, PiggyBank, Sparkles, ChevronRight, Shield, FolderTree, Lock, CreditCard, Crown, Loader2, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
+import { PLAN_PRICES } from "@/config/plans"
 
 interface UserSettings {
   emergencyFundMonths: string
@@ -367,7 +368,7 @@ export function ConfiguracoesClient({ initialSettings, userPlan, subscriptionInf
                     ) : (
                       <Crown className="w-4 h-4" />
                     )}
-                    Fazer upgrade - R$ 19,90/mês
+                    Fazer upgrade - {PLAN_PRICES.proMonthly.label}/mês
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">

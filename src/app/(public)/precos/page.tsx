@@ -1,10 +1,11 @@
 import { Metadata } from "next"
 import { Pricing } from "@/app/components/landing/pricing"
 import { Check, Shield, Zap, HeartHandshake } from "lucide-react"
+import { PLAN_PRICES } from "@/config/plans"
 
 export const metadata: Metadata = {
   title: "Preços - Penochão",
-  description: "Planos e preços do Penochão. Escolha entre Free ou Pro. Plano Pro: R$ 19,90/mês ou R$ 190/ano com 20% de desconto. Garantia de 7 dias.",
+  description: `Planos e preços do Penochão. Escolha entre Free ou Pro. Plano Pro: ${PLAN_PRICES.proMonthly.label}/mês ou ${PLAN_PRICES.proAnnual.label.replace(",00", "")}/ano com 20% de desconto. Garantia de 7 dias.`,
   keywords: [
     "preços penochão",
     "planos controle financeiro",
@@ -74,7 +75,7 @@ const pricingFaqs = [
   },
   {
     question: "Existe desconto para pagamento anual?",
-    answer: "Sim! No plano anual você paga R$ 190,00/ano, o equivalente a R$ 15,83/mês. Isso representa uma economia de 20% comparado ao plano mensal.",
+    answer: `Sim! No plano anual você paga ${PLAN_PRICES.proAnnual.label}/ano, o equivalente a ${PLAN_PRICES.proAnnual.equivalentMonthlyLabel}/mês. Isso representa uma economia de 20% comparado ao plano mensal.`,
   },
   {
     question: "Os preços podem mudar?",

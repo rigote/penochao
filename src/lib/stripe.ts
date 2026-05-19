@@ -1,4 +1,5 @@
 import Stripe from "stripe"
+import { PLAN_COPY, PLAN_FEATURES, PLAN_PRICES } from "@/config/plans"
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -6,30 +7,17 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export const PLANS = {
   free: {
-    name: "Free",
-    description: "Para começar a entender sua vida financeira",
+    name: PLAN_COPY.free.name,
+    description: PLAN_COPY.free.description,
     price: 0,
-    features: [
-      "Dashboard financeiro",
-      "Raio-X financeiro inicial",
-      "Até 3 faturas/mês com IA",
-      "Gráficos básicos",
-    ],
+    features: [...PLAN_FEATURES.free],
   },
   pro: {
-    name: "Pro",
-    description: "Low ticket para sair das dívidas com ajuda da IA",
-    monthlyPrice: 19.90,
-    annualPrice: 190.00,
-    features: [
-      "Dashboard completo",
-      "Categorias personalizadas",
-      "Faturas ilimitadas com IA",
-      "Raio-X financeiro completo",
-      "Sugestões inteligentes para reduzir dívidas",
-      "Relatórios mensais em PDF",
-      "Plano de recuperação financeira",
-    ],
+    name: PLAN_COPY.pro.name,
+    description: PLAN_COPY.pro.description,
+    monthlyPrice: PLAN_PRICES.proMonthly.amount,
+    annualPrice: PLAN_PRICES.proAnnual.amount,
+    features: [...PLAN_FEATURES.pro],
   },
 }
 

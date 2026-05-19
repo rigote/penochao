@@ -37,6 +37,7 @@ import {
 import { Input } from "@/app/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { PLAN_PRICES } from "@/config/plans"
 
 interface CourtesyInfo {
   expiresAt: string
@@ -641,8 +642,8 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <span className="text-3xl font-bold">R$ 19,90</span>
-                    <span className="text-muted-foreground">/mês</span>
+                    <span className="text-3xl font-bold">{PLAN_PRICES.proMonthly.label}</span>
+                    <span className="text-muted-foreground">{PLAN_PRICES.proMonthly.intervalLabel}</span>
                   </div>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
@@ -683,10 +684,10 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <span className="text-3xl font-bold">R$ 190,00</span>
-                    <span className="text-muted-foreground">/ano</span>
+                    <span className="text-3xl font-bold">{PLAN_PRICES.proAnnual.label}</span>
+                    <span className="text-muted-foreground">{PLAN_PRICES.proAnnual.intervalLabel}</span>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Equivale a R$ 15,83/mês
+                      Equivale a {PLAN_PRICES.proAnnual.equivalentMonthlyLabel}/mês
                     </p>
                   </div>
                   <ul className="space-y-2 text-sm">

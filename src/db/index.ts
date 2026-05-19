@@ -8,10 +8,11 @@ import * as authSchema from './schema/auth'
 import * as financeSchema from './schema/finance'
 import * as aiLogsSchema from './schema/ai-logs'
 import * as couponsSchema from './schema/coupons'
+import * as stripeSchema from './schema/stripe'
 
 neonConfig.fetchConnectionCache = true
 
-const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema, ...couponsSchema }
+const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema, ...couponsSchema, ...stripeSchema }
 
 const sql = neon(process.env.DATABASE_URL!)
 export const db = drizzle(sql, { schema })
@@ -20,4 +21,4 @@ export const db = drizzle(sql, { schema })
 export type DbClient = typeof db
 
 // Re-export schemas
-export { authSchema, financeSchema, aiLogsSchema, couponsSchema } 
+export { authSchema, financeSchema, aiLogsSchema, couponsSchema, stripeSchema } 

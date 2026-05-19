@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getAllowedStripePriceIds } from "@/config/plans"
 import { createCheckoutSession, getOrCreateStripeCoupon } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
@@ -29,10 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Price ID é obrigatório" }, { status: 400 })
     }
 
-    const allowedPriceIds = [
-      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
-      process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
-    ].filter(Boolean)
+    const allowedPriceIds = getAllowedStripePriceIds()
 
     if (!allowedPriceIds.includes(priceId)) {
       return NextResponse.json({ error: "Price ID inválido" }, { status: 400 })

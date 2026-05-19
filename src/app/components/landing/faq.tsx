@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PLAN_PRICES } from "@/config/plans"
 
 const faqs = [
   {
@@ -19,7 +20,7 @@ const faqs = [
   },
   {
     question: "Como funciona a cobrança do plano Pro?",
-    answer: "Você pode escolher entre pagamento mensal (R$ 19,90/mês) ou anual (R$ 190,00/ano, equivalente a R$ 15,83/mês). O pagamento é processado de forma segura pelo Stripe. Você pode cancelar a qualquer momento.",
+    answer: `Você pode escolher entre pagamento mensal (${PLAN_PRICES.proMonthly.label}/mês) ou anual (${PLAN_PRICES.proAnnual.label}/ano, equivalente a ${PLAN_PRICES.proAnnual.equivalentMonthlyLabel}/mês). O pagamento é processado de forma segura pelo Stripe. Você pode cancelar a qualquer momento.`,
   },
   {
     question: "Posso cancelar minha assinatura?",
