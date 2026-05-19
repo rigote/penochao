@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
-import { PiggyBank, Sparkles, MessageSquarePlus } from "lucide-react"
+import { PiggyBank, Sparkles } from "lucide-react"
 import { Separator } from "@/app/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
 import { UserMenu } from "./components/user-menu"
@@ -81,12 +81,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <SidebarNav navItems={navItems} />
 
             <div className="px-3 pb-4">
-              <FeedbackDialog>
-                <button className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                  <MessageSquarePlus className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
-                  Feedback
-                </button>
-              </FeedbackDialog>
+              <FeedbackDialog />
+
             </div>
 
             <Separator className="opacity-50" />

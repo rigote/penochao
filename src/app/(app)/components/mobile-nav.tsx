@@ -26,7 +26,7 @@ import {
 import { Button } from "@/app/components/ui/button"
 import { cn } from "@/lib/utils"
 import { signOut } from "next-auth/react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/context/theme-provider"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
 
 interface NavItem {

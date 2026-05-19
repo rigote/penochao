@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MessageSquarePlus, Loader2, Send } from "lucide-react"
 import { toast } from "sonner"
 
-export function FeedbackDialog({ children }: { children: React.ReactNode }) {
+export function FeedbackDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [type, setType] = useState("suggestion")
@@ -57,7 +57,10 @@ export function FeedbackDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children}
+        <button className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <MessageSquarePlus className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
+          Feedback
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Button } from "@/app/components/ui/button"
 import { LogOut, ChevronRight, Sun, Moon } from "lucide-react"
 import { signOut } from "next-auth/react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/context/theme-provider"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/app/context/theme-provider"
 import { useSession } from "next-auth/react"
 import { Button } from "@/app/components/ui/button"
 import { Menu, X, PiggyBank, Moon, Sun, LayoutDashboard } from "lucide-react"
