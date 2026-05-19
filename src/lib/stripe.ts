@@ -1,5 +1,5 @@
 import Stripe from "stripe"
-import { PLAN_COPY, PLAN_FEATURES, PLAN_PRICES } from "@/config/plans"
+import { PLAN_COPY, PLAN_FEATURES, PLAN_PRICES, PRO_TRIAL_DAYS } from "@/config/plans"
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -61,7 +61,8 @@ export async function createCheckoutSession(
   priceId: string,
   name?: string | null,
   stripeCouponId?: string | null,
-  internalCouponId?: string | null
+  internalCouponId?: string | null,
+  includeTrial = false
 ): Promise<string> {
   const customerId = await createOrRetrieveCustomer(userId, email, name)
 
@@ -69,6 +70,7 @@ export async function createCheckoutSession(
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
+    payment_method_collection: "always",
     line_items: [
       {
         price: priceId,
@@ -78,6 +80,7 @@ export async function createCheckoutSession(
     success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
     cancel_url: `${process.env.NEXTAUTH_URL}/assinatura?canceled=true`,
     subscription_data: {
+      ...(includeTrial ? { trial_period_days: PRO_TRIAL_DAYS } : {}),
       metadata: {
         userId,
       },
@@ -85,6 +88,7 @@ export async function createCheckoutSession(
     metadata: {
       userId,
       couponId: internalCouponId || "",
+      trialIncluded: includeTrial ? "true" : "false",
     },
   }
 

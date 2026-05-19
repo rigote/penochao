@@ -74,6 +74,7 @@ export default async function AssinaturaPage() {
     subscriptionStartDate,
     cancelAtPeriodEnd,
     courtesyInfo,
+    hasUsedProTrial: Boolean(user.proTrialUsedAt),
   }
 
   return <AssinaturaClient subscriptionInfo={subscriptionInfo} />

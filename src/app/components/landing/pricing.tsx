@@ -8,7 +8,7 @@ import { Button } from "@/app/components/ui/button"
 import { Check, X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { PLAN_PRICES } from "@/config/plans"
+import { PLAN_PRICES, PRO_TRIAL_DAYS } from "@/config/plans"
 
 const plans = {
   free: {
@@ -46,7 +46,7 @@ const plans = {
       { text: "Suporte prioritário", included: true },
       { text: "Preço pensado para não pesar no bolso", included: true },
     ],
-    cta: "Assinar Pro",
+    cta: `Testar ${PRO_TRIAL_DAYS} dias grátis`,
     popular: true,
   },
 }
@@ -109,7 +109,7 @@ export function Pricing() {
             Preço baixo para ajudar sem virar mais uma conta pesada
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            O Pro ajuda a pagar IA e banco de dados, mantendo o Penochão acessível para quem precisa se reorganizar.
+            Teste o Pro por {PRO_TRIAL_DAYS} dias. Depois disso, a cobrança começa automaticamente se você continuar.
           </p>
 
           {/* Toggle */}
@@ -222,7 +222,7 @@ export function Pricing() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Plano Pro low ticket: pensado para cobrir IA/infra e continuar acessível. Todos os planos incluem 7 dias de garantia.
+          {PRO_TRIAL_DAYS} dias grátis antes da primeira cobrança. Cancele quando quiser pelo portal Stripe.
         </p>
       </div>
     </section>

@@ -11,7 +11,7 @@ import { Label } from "@/app/components/ui/label"
 import { Separator } from "@/app/components/ui/separator"
 import { Save, PiggyBank, Sparkles, ChevronRight, Shield, FolderTree, Lock, CreditCard, Crown, Loader2, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
-import { PLAN_PRICES } from "@/config/plans"
+import { PLAN_PRICES, PRO_TRIAL_DAYS } from "@/config/plans"
 
 interface UserSettings {
   emergencyFundMonths: string
@@ -24,6 +24,7 @@ interface SubscriptionInfo {
   stripeCustomerId: string | null
   stripeSubscriptionId: string | null
   stripeCurrentPeriodEnd: Date | null
+  hasUsedProTrial: boolean
 }
 
 const formatCurrency = (value: string | number) => {
@@ -47,6 +48,7 @@ export function ConfiguracoesClient({ initialSettings, userPlan, subscriptionInf
   const [message, setMessage] = useState("")
   const [loadingPortal, setLoadingPortal] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const trialAvailable = !subscriptionInfo.hasUsedProTrial
 
   const handleManageSubscription = async () => {
     setLoadingPortal(true)
@@ -372,7 +374,9 @@ export function ConfiguracoesClient({ initialSettings, userPlan, subscriptionInf
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Cancele quando quiser. Garantia de 7 dias.
+                  {trialAvailable
+                    ? `Cancele quando quiser. ${PRO_TRIAL_DAYS} dias grátis antes da primeira cobrança.`
+                    : "Cancele quando quiser. Como o teste grátis já foi usado, a cobrança começa no checkout."}
                 </p>
               </>
             )}

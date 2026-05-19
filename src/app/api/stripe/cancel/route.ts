@@ -6,8 +6,7 @@ import { db } from "@/db"
 import { users } from "@/db/schema/auth"
 import { eq } from "drizzle-orm"
 import Stripe from "stripe"
-
-const GUARANTEE_DAYS = 7
+import { PRO_TRIAL_DAYS } from "@/config/plans"
 
 // Helper to safely get timestamp from subscription
 function getSubscriptionTimestamp(
@@ -71,51 +70,55 @@ export async function POST() {
       (now.getTime() - subscriptionStartDate.getTime()) / (1000 * 60 * 60 * 24)
     )
 
-    const isWithinGuarantee = daysSinceStart <= GUARANTEE_DAYS
+    const isTrialing = subscription.status === "trialing"
+    const isWithinLegacyRefundWindow = !isTrialing && daysSinceStart <= PRO_TRIAL_DAYS
 
-    if (isWithinGuarantee) {
-      // Within 7 days: Cancel immediately and refund
-      console.log(`Canceling subscription ${subscription.id} with refund (within guarantee period)`)
+    if (isTrialing || isWithinLegacyRefundWindow) {
+      // Trialing subscriptions can end immediately because no payment has been captured yet.
+      // The legacy refund path keeps old paid subscriptions from before the trial rollout covered.
+      console.log(`Canceling subscription ${subscription.id} immediately`)
       console.log(`Days since start: ${daysSinceStart}`)
       
       let refunded = false
       let refundError: string | null = null
 
-      // Get the latest charges for the customer to refund
-      const customerId = typeof subscription.customer === "string" 
-        ? subscription.customer 
-        : subscription.customer.id
+      if (isWithinLegacyRefundWindow) {
+        // Get the latest charges for the customer to refund
+        const customerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id
 
-      console.log(`Customer ID: ${customerId}`)
+        console.log(`Customer ID: ${customerId}`)
 
-      // Get the latest successful charge for this customer
-      const charges = await stripe.charges.list({
-        customer: customerId,
-        limit: 5,
-      })
+        // Get the latest successful charge for this customer
+        const charges = await stripe.charges.list({
+          customer: customerId,
+          limit: 5,
+        })
 
-      console.log(`Found ${charges.data.length} charges`)
+        console.log(`Found ${charges.data.length} charges`)
 
-      // Find the latest non-refunded successful charge
-      const chargeToRefund = charges.data.find(c => !c.refunded && c.status === "succeeded")
+        // Find the latest non-refunded successful charge
+        const chargeToRefund = charges.data.find(c => !c.refunded && c.status === "succeeded")
 
-      if (chargeToRefund) {
-        console.log(`Charge to refund: ${chargeToRefund.id}, amount: ${chargeToRefund.amount / 100}`)
-        
-        try {
-          const refund = await stripe.refunds.create({
-            charge: chargeToRefund.id,
-            reason: "requested_by_customer",
-          })
-          
-          console.log(`Refund created: ${refund.id}, status: ${refund.status}`)
-          refunded = true
-        } catch (refundErr) {
-          console.error("Refund error:", refundErr)
-          refundError = refundErr instanceof Error ? refundErr.message : "Erro ao processar reembolso"
+        if (chargeToRefund) {
+          console.log(`Charge to refund: ${chargeToRefund.id}, amount: ${chargeToRefund.amount / 100}`)
+
+          try {
+            const refund = await stripe.refunds.create({
+              charge: chargeToRefund.id,
+              reason: "requested_by_customer",
+            })
+
+            console.log(`Refund created: ${refund.id}, status: ${refund.status}`)
+            refunded = true
+          } catch (refundErr) {
+            console.error("Refund error:", refundErr)
+            refundError = refundErr instanceof Error ? refundErr.message : "Erro ao processar reembolso"
+          }
+        } else {
+          console.log("No charges found to refund")
         }
-      } else {
-        console.log("No charges found to refund")
       }
 
       // Cancel subscription immediately
@@ -149,7 +152,9 @@ export async function POST() {
       return NextResponse.json({
         success: true,
         refunded,
-        message: refunded 
+        message: isTrialing
+          ? "Teste gratuito cancelado. Nenhuma cobrança será realizada."
+          : refunded
           ? "Assinatura cancelada e valor reembolsado com sucesso."
           : "Assinatura cancelada. Nenhum pagamento encontrado para reembolso.",
       })

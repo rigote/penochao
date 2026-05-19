@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { Header, Hero, Features, Pricing, FAQ, CTA, Footer } from "@/app/components/landing"
 import { FAQJsonLd } from "@/app/components/seo/json-ld"
+import { PRO_TRIAL_DAYS } from "@/config/plans"
 
 export const metadata: Metadata = {
   title: "Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA",
@@ -40,7 +41,7 @@ const faqItems = [
   },
   {
     question: "Posso cancelar a qualquer momento?",
-    answer: "Sim! Você pode cancelar sua assinatura a qualquer momento. Se cancelar nos primeiros 7 dias, reembolsamos 100% do valor.",
+    answer: `Sim! Você tem ${PRO_TRIAL_DAYS} dias grátis antes da primeira cobrança e pode cancelar a qualquer momento pelo portal Stripe. Depois da cobrança, o acesso continua até o fim do período contratado.`,
   },
   {
     question: "Funciona em dispositivos móveis?",

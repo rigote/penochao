@@ -1,11 +1,11 @@
 import { Metadata } from "next"
 import { Pricing } from "@/app/components/landing/pricing"
 import { Check, Shield, Zap, HeartHandshake } from "lucide-react"
-import { PLAN_PRICES } from "@/config/plans"
+import { PLAN_PRICES, PRO_TRIAL_DAYS } from "@/config/plans"
 
 export const metadata: Metadata = {
   title: "Preços - Penochão",
-  description: `Planos e preços do Penochão. Escolha entre Free ou Pro. Plano Pro: ${PLAN_PRICES.proMonthly.label}/mês ou ${PLAN_PRICES.proAnnual.label.replace(",00", "")}/ano com 20% de desconto. Garantia de 7 dias.`,
+  description: `Planos e preços do Penochão. Escolha entre Free ou Pro. Plano Pro: ${PLAN_PRICES.proMonthly.label}/mês ou ${PLAN_PRICES.proAnnual.label.replace(",00", "")}/ano com 20% de desconto. ${PRO_TRIAL_DAYS} dias grátis antes da primeira cobrança.`,
   keywords: [
     "preços penochão",
     "planos controle financeiro",
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
 const guarantees = [
   {
     icon: Shield,
-    title: "Garantia de 7 dias",
-    description: "Não gostou? Devolvemos 100% do seu dinheiro, sem perguntas.",
+    title: `${PRO_TRIAL_DAYS} dias grátis`,
+    description: "Teste o Pro antes da primeira cobrança e cancele pelo portal Stripe se não fizer sentido para você.",
   },
   {
     icon: Zap,

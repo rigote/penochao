@@ -23,6 +23,7 @@ export const users = pgTable("user", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripePriceId: text("stripe_price_id"),
   stripeCurrentPeriodEnd: timestamp("stripe_current_period_end", { mode: "date" }),
+  proTrialUsedAt: timestamp("pro_trial_used_at", { mode: "date" }),
 })
 
 export const accounts = pgTable(

@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
                 stripeSubscriptionId: subscription.id,
                 stripePriceId: subscription.items.data[0].price.id,
                 stripeCurrentPeriodEnd: periodEnd,
+                ...(subscription.status === "trialing" ? { proTrialUsedAt: new Date() } : {}),
                 updatedAt: new Date(),
               })
               .where(eq(users.id, userId))

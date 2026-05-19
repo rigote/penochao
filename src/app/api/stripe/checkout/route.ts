@@ -6,7 +6,7 @@ import { createCheckoutSession, getOrCreateStripeCoupon } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
 import { coupons, couponRedemptions } from "@/db/schema/coupons"
-import { eq, and } from "drizzle-orm"
+import { eq, and, isNull } from "drizzle-orm"
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,16 +69,48 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const checkoutUrl = await createCheckoutSession(
-      user.id,
-      user.email,
-      priceId,
-      user.name,
-      stripeCouponId,
-      internalCouponId
-    )
+    let includeTrial = false
+    let claimedTrial = false
 
-    return NextResponse.json({ url: checkoutUrl })
+    if (!user.proTrialUsedAt) {
+      const [trialClaim] = await db
+        .update(users)
+        .set({
+          proTrialUsedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(users.id, user.id), isNull(users.proTrialUsedAt)))
+        .returning({ id: users.id })
+
+      includeTrial = Boolean(trialClaim)
+      claimedTrial = includeTrial
+    }
+
+    try {
+      const checkoutUrl = await createCheckoutSession(
+        user.id,
+        user.email,
+        priceId,
+        user.name,
+        stripeCouponId,
+        internalCouponId,
+        includeTrial
+      )
+
+      return NextResponse.json({ url: checkoutUrl, trialIncluded: includeTrial })
+    } catch (checkoutError) {
+      if (claimedTrial) {
+        await db
+          .update(users)
+          .set({
+            proTrialUsedAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id))
+      }
+
+      throw checkoutError
+    }
   } catch (error) {
     console.error("Checkout error:", error)
     return NextResponse.json(

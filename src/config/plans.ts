@@ -19,6 +19,8 @@ export const PLAN_PRICES = {
   },
 } as const
 
+export const PRO_TRIAL_DAYS = 7
+
 export const PLAN_FEATURES = {
   free: [
     "Dashboard financeiro",

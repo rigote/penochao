@@ -52,6 +52,7 @@ export default async function ConfiguracoesPage() {
     stripeCustomerId: user.stripeCustomerId,
     stripeSubscriptionId: user.stripeSubscriptionId,
     stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd,
+    hasUsedProTrial: Boolean(user.proTrialUsedAt),
   }
 
   return (

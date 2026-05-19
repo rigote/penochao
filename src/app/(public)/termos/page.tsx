@@ -1,8 +1,9 @@
 import { Metadata } from "next"
+import { PRO_TRIAL_DAYS } from "@/config/plans"
 
 export const metadata: Metadata = {
   title: "Termos de Uso - Penochão",
-  description: "Termos de uso e condições do Penochão. Leia nossos termos de serviço, políticas de cancelamento e garantias.",
+  description: "Termos de uso e condições do Penochão. Leia nossos termos de serviço, políticas de teste gratuito e cancelamento.",
   keywords: [
     "termos de uso penochão",
     "condições de uso",
@@ -72,8 +73,10 @@ export default function TermosPage() {
             plano Pro continuará até o final do período de faturamento atual.
           </p>
           <p className="text-muted-foreground leading-relaxed mt-4">
-            <strong>Reembolso:</strong> Oferecemos garantia de 7 dias para novas assinaturas. Após esse período, 
-            não são oferecidos reembolsos por períodos parciais.
+            <strong>Teste gratuito:</strong> Novas assinaturas Pro podem incluir {PRO_TRIAL_DAYS} dias gratuitos
+            antes da primeira cobrança. Se você cancelar durante o teste, não haverá cobrança. Após a cobrança,
+            não são oferecidos reembolsos por períodos parciais, salvo obrigação legal ou política específica
+            informada no checkout.
           </p>
         </section>
 

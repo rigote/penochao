@@ -37,7 +37,7 @@ import {
 import { Input } from "@/app/components/ui/input"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { PLAN_PRICES } from "@/config/plans"
+import { PLAN_PRICES, PRO_TRIAL_DAYS } from "@/config/plans"
 
 interface CourtesyInfo {
   expiresAt: string
@@ -54,6 +54,7 @@ interface SubscriptionInfo {
   subscriptionStartDate: Date | null
   cancelAtPeriodEnd: boolean
   courtesyInfo: CourtesyInfo | null
+  hasUsedProTrial: boolean
 }
 
 interface AssinaturaClientProps {
@@ -90,13 +91,14 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
   const [validCoupon, setValidCoupon] = useState<CouponInfo | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [redeemingCoupon, setRedeemingCoupon] = useState(false)
+  const trialAvailable = !subscriptionInfo.hasUsedProTrial
 
-  // Calculate if within guarantee period (7 days)
+  // The checkout starts new Stripe subscriptions with a free trial.
   const daysActive = subscriptionInfo.subscriptionStartDate
     ? differenceInDays(new Date(), new Date(subscriptionInfo.subscriptionStartDate))
     : 0
-  const isWithinGuarantee = daysActive <= 7
-  const daysRemaining = Math.max(0, 7 - daysActive)
+  const isWithinTrialWindow = daysActive <= PRO_TRIAL_DAYS
+  const daysRemaining = Math.max(0, PRO_TRIAL_DAYS - daysActive)
 
   const handleValidateCoupon = async () => {
     if (!couponCode.trim()) {
@@ -230,9 +232,13 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
           toast.success("Assinatura cancelada", {
             description: "O valor foi reembolsado para seu cartão.",
           })
-        } else {
+        } else if (data.cancelAt) {
           toast.success("Assinatura cancelada", {
             description: `Você manterá acesso ao Pro até ${format(new Date(data.cancelAt), "dd/MM/yyyy")}.`,
+          })
+        } else {
+          toast.success("Assinatura cancelada", {
+            description: data.message || "Seu teste gratuito foi encerrado sem cobrança.",
           })
         }
         router.refresh()
@@ -333,14 +339,14 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                     </div>
                   )}
 
-                  {isWithinGuarantee && (
+                  {isWithinTrialWindow && (
                     <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-4 flex items-start gap-3">
                       <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-green-600">Período de garantia ativo</p>
+                        <p className="text-sm font-medium text-green-600">Teste gratuito ativo</p>
                         <p className="text-sm text-muted-foreground">
-                          Você ainda tem {daysRemaining} {daysRemaining === 1 ? "dia" : "dias"} de garantia. 
-                          Cancele agora e receba reembolso total.
+                          Você ainda tem {daysRemaining} {daysRemaining === 1 ? "dia" : "dias"} antes da primeira cobrança.
+                          Cancele antes do fim do teste para não ser cobrado.
                         </p>
                       </div>
                     </div>
@@ -455,13 +461,13 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                         <AlertDialogTitle>Cancelar assinatura</AlertDialogTitle>
                         <AlertDialogDescription asChild>
                           <div className="space-y-3">
-                            {isWithinGuarantee ? (
+                            {isWithinTrialWindow ? (
                               <>
                                 <p>
-                                  Você está dentro do <strong>período de garantia de 7 dias</strong>.
+                                  Você está dentro do <strong>teste gratuito de {PRO_TRIAL_DAYS} dias</strong>.
                                 </p>
                                 <p>
-                                  Ao cancelar agora, sua assinatura será encerrada imediatamente e o valor pago será <strong>reembolsado integralmente</strong>.
+                                  Ao cancelar agora, sua assinatura será encerrada imediatamente e não haverá cobrança do plano Pro.
                                 </p>
                               </>
                             ) : (
@@ -492,7 +498,7 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                           {loadingCancel ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           ) : null}
-                          {isWithinGuarantee ? "Cancelar e reembolsar" : "Confirmar cancelamento"}
+                          {isWithinTrialWindow ? "Cancelar teste" : "Confirmar cancelamento"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -503,15 +509,17 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
 
               {subscriptionInfo.stripeSubscriptionId && (
                 <p className="text-xs text-muted-foreground">
-                  {isWithinGuarantee
-                    ? "Cancele nos primeiros 7 dias para reembolso total."
+                  {isWithinTrialWindow
+                    ? "Cancele antes do fim do teste para não ser cobrado."
                     : "Altere método de pagamento ou veja faturas no portal Stripe."}
                 </p>
               )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Faça upgrade para o plano Pro e desbloqueie todos os recursos premium.
+              {trialAvailable
+                ? `Teste o plano Pro por ${PRO_TRIAL_DAYS} dias grátis e desbloqueie todos os recursos premium.`
+                : "Assine o plano Pro para desbloquear todos os recursos premium."}
             </p>
           )}
         </CardContent>
@@ -638,7 +646,9 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
               <Card variant="elevated" className="relative">
                 <CardHeader>
                   <CardTitle>Mensal</CardTitle>
-                  <CardDescription>Flexibilidade total</CardDescription>
+                  <CardDescription>
+                    {trialAvailable ? `${PRO_TRIAL_DAYS} dias grátis, depois mensal` : "Cobrança mensal"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -652,7 +662,7 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-primary" />
-                      Cancele quando quiser
+                      {trialAvailable ? "Cancele antes da cobrança" : "Cancele quando quiser"}
                     </li>
                   </ul>
                   <Button
@@ -666,7 +676,7 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                     ) : (
                       <Crown className="w-4 h-4" />
                     )}
-                    Assinar Mensal
+                    {trialAvailable ? "Testar Mensal" : "Assinar Mensal"}
                   </Button>
                 </CardContent>
               </Card>
@@ -680,7 +690,9 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                 </div>
                 <CardHeader>
                   <CardTitle>Anual</CardTitle>
-                  <CardDescription>Melhor custo-benefício</CardDescription>
+                  <CardDescription>
+                    {trialAvailable ? `${PRO_TRIAL_DAYS} dias grátis, depois anual` : "Cobrança anual"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -710,7 +722,7 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
                     ) : (
                       <Crown className="w-4 h-4" />
                     )}
-                    Assinar Anual
+                    {trialAvailable ? "Testar Anual" : "Assinar Anual"}
                   </Button>
                 </CardContent>
               </Card>
@@ -721,9 +733,13 @@ export function AssinaturaClient({ subscriptionInfo }: AssinaturaClientProps) {
           <div className="rounded-xl bg-muted/50 border p-4 flex items-center gap-3">
             <Shield className="w-6 h-6 text-primary flex-shrink-0" />
             <div>
-              <p className="font-medium text-sm">Garantia de 7 dias</p>
+              <p className="font-medium text-sm">
+                {trialAvailable ? `${PRO_TRIAL_DAYS} dias grátis antes da cobrança` : "Assinatura protegida pelo Stripe"}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Não gostou? Devolvemos 100% do seu dinheiro, sem perguntas.
+                {trialAvailable
+                  ? "O Stripe só cobra após o período de teste. Você pode cancelar antes pelo portal."
+                  : "Como o teste grátis já foi usado nesta conta, a cobrança começa no checkout."}
               </p>
             </div>
           </div>
