@@ -223,7 +223,9 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const dbUser = await resolveEffectiveUserPlan(user)
   const userPlan = dbUser.plan === "pro" ? "pro" : "free"
 
-  const currentMonth = params.month ? parse(params.month, "yyyy-MM", new Date()) : new Date()
+  // Use day 15 to prevent timezone boundary issues (UTC→BRT shift)
+  const rawMonth = params.month ? parse(params.month, "yyyy-MM", new Date()) : new Date()
+  const currentMonth = new Date(rawMonth.getFullYear(), rawMonth.getMonth(), 15)
   const page = Number(params.page) || 1
   const type = (params.type as ExpenseType | "all") || "all"
 

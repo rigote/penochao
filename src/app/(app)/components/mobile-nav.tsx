@@ -22,6 +22,7 @@ import {
   LucideIcon,
   ChevronRight,
   Calculator,
+  TrendingUp,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -51,6 +52,7 @@ const iconMap: Record<string, LucideIcon> = {
   Crown,
   Activity,
   Calculator,
+  TrendingUp,
 }
 
 // Clean accent colors removed

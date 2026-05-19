@@ -329,9 +329,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   }
 
   // Parse month from URL or default to current
-  const currentMonthDate = params.month
+  // Use day 15 to prevent timezone boundary issues (UTC midnight on day 1
+  // becomes the previous month in BRT -03:00 when serialized to client)
+  const rawDate = params.month
     ? parse(params.month, "yyyy-MM", new Date())
     : new Date()
+  const currentMonthDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), 15)
 
   const data = await getDashboardData(user.id, currentMonthDate)
 

@@ -15,6 +15,7 @@ const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/raio-x", label: "Raio-X", icon: "Activity" },
   { href: "/previsao-diaria", label: "Previsão Diária", icon: "Calculator" },
+  { href: "/horizonte-saldos", label: "Horizonte de Saldos", icon: "TrendingUp" },
   { href: "/entradas", label: "Entradas", icon: "ArrowUpCircle" },
   { href: "/despesas", label: "Despesas", icon: "ArrowDownCircle" },
   { href: "/faturas", label: "Upload de Faturas", icon: "FileText" },
