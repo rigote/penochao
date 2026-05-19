@@ -56,7 +56,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/app/components/ui/pagination"
-import { Plus, Pencil, Trash2, ArrowDownCircle, Wallet, AlertTriangle, Sparkles, TrendingDown, Zap } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowDownCircle, Wallet, AlertTriangle, Sparkles, TrendingDown, Zap, Repeat, Minus } from "lucide-react"
 import { CategoryIcon } from "@/app/components/shared/category-icon"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -154,6 +154,7 @@ export function DespesasClient({
   const [categoryId, setCategoryId] = useState("")
   const [type, setType] = useState<"essential" | "non_essential">("essential")
   const [recurrence, setRecurrence] = useState("once")
+  const [repetitions, setRepetitions] = useState(1)
 
   function resetForm() {
     setDescription("")
@@ -162,6 +163,7 @@ export function DespesasClient({
     setCategoryId("")
     setType("essential")
     setRecurrence("once")
+    setRepetitions(1)
     setEditingExpense(null)
   }
 
@@ -186,7 +188,8 @@ export function DespesasClient({
       occurrenceDate,
       categoryId: categoryId || undefined,
       type,
-      recurrence,
+      recurrence: repetitions > 1 ? "once" : recurrence,
+      repetitions: recurrence === "monthly" ? repetitions : 1,
     }
 
     try {
@@ -488,7 +491,10 @@ export function DespesasClient({
 
                     <div className="space-y-2">
                       <Label htmlFor="recurrence">Recorrência</Label>
-                      <Select value={recurrence} onValueChange={setRecurrence}>
+                      <Select value={recurrence} onValueChange={(val) => {
+                        setRecurrence(val)
+                        if (val !== "monthly") setRepetitions(1)
+                      }}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -500,6 +506,48 @@ export function DespesasClient({
                       </Select>
                     </div>
                   </div>
+
+                  {/* Repetitions - appears when recurrence is monthly and not editing */}
+                  {recurrence === "monthly" && !editingExpense && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Label className="flex items-center gap-2">
+                        <Repeat className="w-4 h-4 text-muted-foreground" />
+                        Repetições
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <p className="text-xs text-muted-foreground flex-1">
+                          {repetitions === 1
+                            ? "Repete indefinidamente todo mês"
+                            : `Criará ${repetitions} lançamentos (um por mês)`}
+                        </p>
+                        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-md"
+                            onClick={() => setRepetitions(Math.max(1, repetitions - 1))}
+                            disabled={repetitions <= 1}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <span className="w-8 text-center font-semibold text-sm tabular-nums">
+                            {repetitions}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-md"
+                            onClick={() => setRepetitions(Math.min(48, repetitions + 1))}
+                            disabled={repetitions >= 48}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

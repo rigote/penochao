@@ -145,6 +145,39 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validatedData = createExpenseSchema.parse(body)
 
+    const repetitions = validatedData.repetitions ?? 1
+
+    // If repetitions > 1, create individual entries for each month
+    if (repetitions > 1) {
+      const baseDate = new Date(validatedData.occurrenceDate + "T00:00:00")
+      const values = Array.from({ length: repetitions }, (_, i) => {
+        const date = new Date(baseDate)
+        date.setMonth(date.getMonth() + i)
+        const dateStr = date.toISOString().split("T")[0]
+        return {
+          userId: user.id,
+          categoryId: validatedData.categoryId,
+          description: encrypt(validatedData.description),
+          amount: encryptNumber(validatedData.amount.toString()),
+          occurrenceDate: dateStr,
+          type: validatedData.type,
+          recurrence: "once" as const,
+        }
+      })
+
+      const created = await db.insert(expenses).values(values).returning()
+
+      return NextResponse.json(
+        created.map((e) => ({
+          ...e,
+          description: decrypt(e.description),
+          amount: decryptNumber(e.amount),
+        })),
+        { status: 201 }
+      )
+    }
+
+    // Single entry (default behavior)
     const [newExpense] = await db
       .insert(expenses)
       .values({
@@ -158,7 +191,6 @@ export async function POST(request: Request) {
       })
       .returning()
 
-    // Decrypt before returning
     const decryptedExpense = {
       ...newExpense,
       description: decrypt(newExpense.description),

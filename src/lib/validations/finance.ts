@@ -24,6 +24,7 @@ export const createIncomeSchema = z.object({
   amount: z.coerce.number().positive("Valor deve ser positivo"),
   occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   recurrence: recurrenceSchema.optional().default("once"),
+  repetitions: z.coerce.number().int().min(1).max(48).optional().default(1),
 })
 
 export const updateIncomeSchema = createIncomeSchema.partial()
@@ -36,6 +37,7 @@ export const createExpenseSchema = z.object({
   occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   type: z.enum(["essential", "non_essential"]),
   recurrence: recurrenceSchema.optional().default("once"),
+  repetitions: z.coerce.number().int().min(1).max(48).optional().default(1),
 })
 
 export const updateExpenseSchema = createExpenseSchema.partial()
