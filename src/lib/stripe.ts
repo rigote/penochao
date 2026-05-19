@@ -1,9 +1,7 @@
 import Stripe from "stripe"
 import { PLAN_COPY, PLAN_FEATURES, PLAN_PRICES } from "@/config/plans"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-})
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export const PLANS = {
   free: {
