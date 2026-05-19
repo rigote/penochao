@@ -24,7 +24,7 @@ describe('Button', () => {
 
   it('applies size classes correctly', () => {
     render(<Button size="lg">Large</Button>)
-    expect(screen.getByRole('button')).toHaveClass('h-10')
+    expect(screen.getByRole('button')).toHaveClass('h-12')
   })
 
   it('forwards ref correctly', () => {
