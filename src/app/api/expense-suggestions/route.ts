@@ -7,6 +7,7 @@ import { decrypt, decryptNumber } from "@/lib/encryption"
 import { analyzeExpensesForSavings } from "@/lib/gemini"
 import { startOfMonth, endOfMonth, format } from "date-fns"
 import crypto from "crypto"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 export async function GET(request: Request) {
   try {
@@ -20,13 +21,15 @@ export async function GET(request: Request) {
     const year = searchParams.get("year")
     const force = searchParams.get("force") === "true" // Force new analysis even if cached
 
-    const user = await db.query.users.findFirst({
+    const foundUser = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.email, session.user!.email!),
     })
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
     }
+
+    const user = await resolveEffectiveUserPlan(foundUser)
 
     // Check if user is on Pro plan
     if (user.plan !== "pro") {

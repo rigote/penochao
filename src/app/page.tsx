@@ -3,13 +3,14 @@ import { Header, Hero, Features, Pricing, FAQ, CTA, Footer } from "@/app/compone
 import { FAQJsonLd } from "@/app/components/seo/json-ld"
 
 export const metadata: Metadata = {
-  title: "Penochão - Controle Financeiro Inteligente com IA",
-  description: "Organize suas finanças sem complicação. Gerencie despesas, acompanhe receitas e tenha uma visão clara do seu dinheiro. Nossa IA lê suas faturas automaticamente.",
+  title: "Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA",
+  description: "Organize entradas, despesas e dívidas. Veja o que está travando sua vida financeira e receba um plano realista para sair do aperto.",
   keywords: [
+    "sair das dívidas",
     "controle financeiro",
     "organizar finanças",
     "leitura de faturas com IA",
-    "dashboard financeiro",
+    "diagnóstico financeiro",
     "gestão de despesas",
     "categorização automática",
     "finanças pessoais",

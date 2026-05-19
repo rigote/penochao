@@ -5,6 +5,7 @@ import { invoices } from "@/db/schema/finance"
 import { couponRedemptions } from "@/db/schema/coupons"
 import { count, eq, and, gte, lt, desc } from "drizzle-orm"
 import { FaturasClient } from "./faturas-client"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 export default async function FaturasPage() {
   const session = await getServerSession()
@@ -13,13 +14,15 @@ export default async function FaturasPage() {
     redirect("/login")
   }
 
-  const user = await db.query.users.findFirst({
+  const foundUser = await db.query.users.findFirst({
     where: (users, { eq }) => eq(users.email, session.user!.email!),
   })
 
-  if (!user) {
+  if (!foundUser) {
     redirect("/login")
   }
+
+  const user = await resolveEffectiveUserPlan(foundUser)
 
   const categories = await db.query.categories.findMany({
     orderBy: (categories, { asc }) => [asc(categories.name)],

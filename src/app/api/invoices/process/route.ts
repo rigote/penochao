@@ -8,6 +8,7 @@ import { invoices } from "@/db/schema/finance";
 import { couponRedemptions } from "@/db/schema/coupons";
 import { sql, gte, and, lt, eq, count, desc } from "drizzle-orm";
 import { encryptJSON } from "@/lib/encryption";
+import { resolveEffectiveUserPlan } from "@/lib/subscription";
 
 // Budget configuration
 const MONTHLY_BUDGET_BRL = 20.00;
@@ -44,16 +45,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user from database
-    const user = await db.query.users.findFirst({
+    const foundUser = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.email, session.user!.email!),
     });
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
         { status: 401 }
       );
     }
+
+    const user = await resolveEffectiveUserPlan(foundUser);
 
     // Check free plan limit
     const startOfMonth = new Date();

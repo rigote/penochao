@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   Crown,
+  Activity,
   PiggyBank,
   LogOut,
   Menu,
@@ -48,6 +49,7 @@ const iconMap: Record<string, LucideIcon> = {
   Settings,
   ShieldCheck,
   Crown,
+  Activity,
 }
 
 // Clean accent colors removed

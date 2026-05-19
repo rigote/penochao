@@ -1,37 +1,43 @@
 import { 
   Sparkles, 
-  PieChart, 
+  Activity,
   FileText, 
   Shield, 
   Smartphone, 
-  TrendingUp 
+  TrendingUp,
+  CreditCard
 } from "lucide-react"
 
 const features = [
   {
+    icon: Activity,
+    title: "Raio-X Financeiro",
+    description: "Veja se sua vida básica fecha, quanto as dívidas consomem e qual é sua sobra real antes de tomar decisões.",
+  },
+  {
+    icon: CreditCard,
+    title: "Dívidas Fora do Caos",
+    description: "Separe faturas, empréstimos e renegociações do custo essencial para entender o tamanho real do problema.",
+  },
+  {
     icon: Sparkles,
-    title: "Leitura de Faturas com IA",
-    description: "Envie suas faturas em PDF e nossa inteligência artificial extrai automaticamente os dados e categoriza suas despesas.",
-  },
-  {
-    icon: PieChart,
-    title: "Dashboard Inteligente",
-    description: "Visualize suas finanças com gráficos claros e insights sobre seus hábitos de consumo. Acompanhe sua evolução mês a mês.",
-  },
-  {
-    icon: FileText,
-    title: "Categorização Automática",
-    description: "Organize despesas em categorias essenciais e não essenciais. Personalize subcategorias conforme sua necessidade.",
+    title: "IA Com Contexto",
+    description: "Receba sugestões inteligentes para cortar vazamentos, proteger reserva e negociar dívidas no momento certo.",
   },
   {
     icon: TrendingUp,
-    title: "Reserva de Emergência",
-    description: "Defina metas de reserva e acompanhe seu progresso. Saiba exatamente quanto falta para sua segurança financeira.",
+    title: "Plano de Recuperação",
+    description: "Transforme entradas, despesas e dívidas em uma ordem simples: fechar o mês, criar folga, formar reserva e negociar.",
+  },
+  {
+    icon: FileText,
+    title: "Leitura de Faturas",
+    description: "Envie PDFs de faturas e extratos para transformar movimentações em transações editáveis dentro do app.",
   },
   {
     icon: Smartphone,
-    title: "Acesso em Qualquer Lugar",
-    description: "Interface responsiva que funciona perfeitamente no celular, tablet ou computador. Seus dados sempre acessíveis.",
+    title: "Substitua a Planilha",
+    description: "Registre entradas, despesas mensais e gastos do dia a dia com uma visão feita para decisão, não só anotação.",
   },
   {
     icon: Shield,
@@ -46,12 +52,11 @@ export function Features() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Tudo que você precisa para{" "}
-            <span className="text-primary">controlar seu dinheiro</span>
+            Não é só controlar gastos. É{" "}
+            <span className="text-primary">entender o que está te afundando</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Ferramentas simples e poderosas para você entender para onde vai seu dinheiro 
-            e tomar decisões financeiras mais inteligentes.
+            O Penochão parte do diagnóstico: renda real, custo essencial, dívidas, sobra e plano de ação.
           </p>
         </div>
 

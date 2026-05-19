@@ -5,6 +5,7 @@ import { couponRedemptions, coupons } from "@/db/schema/coupons"
 import { eq, and, gte, desc } from "drizzle-orm"
 import { stripe } from "@/lib/stripe"
 import { AssinaturaClient } from "./assinatura-client"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 export default async function AssinaturaPage() {
   const session = await getServerSession()
@@ -13,13 +14,15 @@ export default async function AssinaturaPage() {
     redirect("/login")
   }
 
-  const user = await db.query.users.findFirst({
+  const foundUser = await db.query.users.findFirst({
     where: (users, { eq }) => eq(users.email, session.user!.email!),
   })
 
-  if (!user) {
+  if (!foundUser) {
     redirect("/login")
   }
+
+  const user = await resolveEffectiveUserPlan(foundUser)
 
   let subscriptionStartDate: Date | null = null
   let cancelAtPeriodEnd = false

@@ -7,28 +7,28 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export const PLANS = {
   free: {
     name: "Free",
-    description: "Para começar a organizar suas finanças",
+    description: "Para começar a entender sua vida financeira",
     price: 0,
     features: [
-      "Dashboard completo",
-      "Categorias personalizadas",
+      "Dashboard financeiro",
+      "Raio-X financeiro inicial",
       "Até 3 faturas/mês com IA",
       "Gráficos básicos",
     ],
   },
   pro: {
     name: "Pro",
-    description: "Para quem quer controle total das finanças",
-    monthlyPrice: 19.90,
-    annualPrice: 190.00,
+    description: "Low ticket para sair das dívidas com ajuda da IA",
+    monthlyPrice: 9.90,
+    annualPrice: 99.00,
     features: [
       "Dashboard completo",
       "Categorias personalizadas",
       "Faturas ilimitadas com IA",
-      "Gráficos avançados",
-      "Exportação PDF/Excel",
-      "Suporte prioritário",
-      "Acesso antecipado a novidades",
+      "Raio-X financeiro completo",
+      "Sugestões inteligentes para reduzir dívidas",
+      "Relatórios mensais em PDF",
+      "Plano de recuperação financeira",
     ],
   },
 }

@@ -12,18 +12,18 @@ import { toast } from "sonner"
 const plans = {
   free: {
     name: "Free",
-    description: "Para começar a organizar suas finanças",
+    description: "Para começar o diagnóstico sem compromisso",
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
-      { text: "Dashboard completo", included: true },
-      { text: "Categorias personalizadas", included: true },
+      { text: "Dashboard financeiro", included: true },
+      { text: "Raio-X financeiro inicial", included: true },
       { text: "Até 3 faturas/mês com IA", included: true },
       { text: "Gráficos básicos", included: true },
       { text: "Faturas ilimitadas com IA", included: false },
       { text: "Relatórios mensais detalhados", included: false },
-      { text: "Identifique gastos desnecessários", included: false },
-      { text: "Análise inteligente de despesas", included: false },
+      { text: "Sugestões inteligentes de recuperação", included: false },
+      { text: "Plano de saída das dívidas", included: false },
       { text: "Suporte prioritário", included: false },
     ],
     cta: "Começar grátis",
@@ -31,19 +31,19 @@ const plans = {
   },
   pro: {
     name: "Pro",
-    description: "Para quem quer controle total das finanças",
-    monthlyPrice: 19.90,
-    annualPrice: 190.00,
+    description: "Low ticket para cobrir IA, banco e te ajudar de verdade",
+    monthlyPrice: 9.90,
+    annualPrice: 99.00,
     features: [
       { text: "Dashboard completo", included: true },
       { text: "Categorias personalizadas", included: true },
       { text: "Faturas ilimitadas com IA", included: true },
-      { text: "Gráficos avançados", included: true },
+      { text: "Raio-X financeiro completo", included: true },
       { text: "Relatórios mensais detalhados em PDF", included: true },
-      { text: "Identifique gastos desnecessários e economize mais", included: true },
-      { text: "Análise inteligente de oportunidades de economia", included: true },
+      { text: "Sugestões inteligentes para reduzir dívidas", included: true },
+      { text: "Plano de saída das dívidas", included: true },
       { text: "Suporte prioritário", included: true },
-      { text: "Acesso antecipado a novidades", included: true },
+      { text: "Preço pensado para não pesar no bolso", included: true },
     ],
     cta: "Assinar Pro",
     popular: true,
@@ -105,10 +105,10 @@ export function Pricing() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Planos simples e transparentes
+            Preço baixo para ajudar sem virar mais uma conta pesada
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Escolha o plano ideal para você. Sem surpresas, sem taxas escondidas.
+            O Pro ajuda a pagar IA e banco de dados, mantendo o Penochão acessível para quem precisa se reorganizar.
           </p>
 
           {/* Toggle */}
@@ -151,7 +151,7 @@ export function Pricing() {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="px-3 py-1 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                    Mais popular
+                    Melhor custo-benefício
                   </span>
                 </div>
               )}
@@ -221,7 +221,7 @@ export function Pricing() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Todos os planos incluem 7 dias de garantia. Cancele quando quiser.
+          Plano Pro low ticket: pensado para cobrir IA/infra e continuar acessível. Todos os planos incluem 7 dias de garantia.
         </p>
       </div>
     </section>

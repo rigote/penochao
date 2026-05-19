@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/app/components/ui/button"
-import { ArrowRight, Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
+import { ArrowRight, Sparkles, TrendingUp, Shield, Zap, Activity } from "lucide-react"
 
 export function Hero() {
   return (
@@ -16,26 +16,25 @@ export function Hero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8">
             <Sparkles className="w-4 h-4" />
-            <span>Controle financeiro inteligente com IA</span>
+            <span>Diagnóstico financeiro com IA para sair das dívidas</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            Organize suas finanças{" "}
-            <span className="text-primary">sem complicação</span>
+            Saia do sufoco financeiro{" "}
+            <span className="text-primary">com clareza e um plano realista</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Gerencie despesas, acompanhe receitas e tenha uma visão clara do seu dinheiro. 
-            Nossa IA lê suas faturas automaticamente e categoriza tudo para você.
+            O Penochão organiza suas entradas, despesas e dívidas para mostrar o que está travando sua vida financeira e qual deve ser seu próximo passo.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Button size="lg" className="w-full sm:w-auto text-base px-8" asChild>
               <Link href="/login">
-                Começar grátis
+                Fazer meu diagnóstico
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
             </Button>
@@ -46,10 +45,10 @@ export function Hero() {
 
           {/* Trust indicators */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 max-w-3xl mx-auto">
-            <TrustIndicator icon={<TrendingUp className="w-5 h-5" />} value="10k+" label="Transações" />
+            <TrustIndicator icon={<Activity className="w-5 h-5" />} value="Raio-X" label="Financeiro" />
             <TrustIndicator icon={<Shield className="w-5 h-5" />} value="100%" label="Seguro" />
-            <TrustIndicator icon={<Zap className="w-5 h-5" />} value="< 1s" label="Tempo de resposta" />
-            <TrustIndicator icon={<Sparkles className="w-5 h-5" />} value="IA" label="Powered" />
+            <TrustIndicator icon={<Zap className="w-5 h-5" />} value="Plano" label="De ação" />
+            <TrustIndicator icon={<Sparkles className="w-5 h-5" />} value="IA" label="Com contexto" />
           </div>
         </div>
 
@@ -67,16 +66,16 @@ export function Hero() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Mock Dashboard Cards */}
                   <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
-                    <p className="text-sm text-muted-foreground mb-1">Entradas</p>
+                    <p className="text-sm text-muted-foreground mb-1">Renda média</p>
                     <p className="text-2xl font-bold text-green-600">R$ 8.450,00</p>
                   </div>
                   <div className="p-4 rounded-lg bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
-                    <p className="text-sm text-muted-foreground mb-1">Despesas</p>
-                    <p className="text-2xl font-bold text-red-600">R$ 5.230,00</p>
+                    <p className="text-sm text-muted-foreground mb-1">Dívidas/cartão</p>
+                    <p className="text-2xl font-bold text-red-600">R$ 3.180,00</p>
                   </div>
                   <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-1">Saldo</p>
-                    <p className="text-2xl font-bold text-primary">R$ 3.220,00</p>
+                    <p className="text-sm text-muted-foreground mb-1">Sobra real</p>
+                    <p className="text-2xl font-bold text-primary">R$ 420,00</p>
                   </div>
                 </div>
               </div>

@@ -9,9 +9,11 @@ import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
 import { AnalyticsProvider } from "@/app/components/analytics-provider"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+  { href: "/raio-x", label: "Raio-X", icon: "Activity" },
   { href: "/entradas", label: "Entradas", icon: "ArrowUpCircle" },
   { href: "/despesas", label: "Despesas", icon: "ArrowDownCircle" },
   { href: "/faturas", label: "Upload de Faturas", icon: "FileText" },
@@ -26,13 +28,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/login")
   }
 
-  const dbUser = await db.query.users.findFirst({
+  const foundUser = await db.query.users.findFirst({
     where: (users, { eq }) => eq(users.email, session.user!.email!),
   })
 
-  if (!dbUser) {
+  if (!foundUser) {
     redirect("/login")
   }
+
+  const dbUser = await resolveEffectiveUserPlan(foundUser)
 
   const user = {
     name: dbUser.name || session.user.name || null,
