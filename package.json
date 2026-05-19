@@ -17,6 +17,7 @@
     "type-check": "tsc --noEmit",
     "precommit": "pnpm type-check && pnpm test:unit",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
