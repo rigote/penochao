@@ -14,6 +14,7 @@ import { resolveEffectiveUserPlan } from "@/lib/subscription"
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/raio-x", label: "Raio-X", icon: "Activity" },
+  { href: "/previsao-diaria", label: "Previsão Diária", icon: "Calculator" },
   { href: "/entradas", label: "Entradas", icon: "ArrowUpCircle" },
   { href: "/despesas", label: "Despesas", icon: "ArrowDownCircle" },
   { href: "/faturas", label: "Upload de Faturas", icon: "FileText" },

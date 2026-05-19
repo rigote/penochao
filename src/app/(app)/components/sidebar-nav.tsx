@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Crown,
   Activity,
+  Calculator,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -30,6 +31,7 @@ const iconMap: Record<string, LucideIcon> = {
   ShieldCheck,
   Crown,
   Activity,
+  Calculator,
 }
 
 export function SidebarNav({ navItems }: { navItems: NavItem[] }) {

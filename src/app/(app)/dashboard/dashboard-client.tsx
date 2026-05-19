@@ -26,11 +26,12 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart3,
-  Plus
+  Plus,
+  Calculator
 } from "lucide-react"
 import { MonthSelector } from "@/app/components/shared/month-selector"
 import { ExpenseSuggestions } from "@/app/components/shared/expense-suggestions"
-import { format } from "date-fns"
+import { format, getDaysInMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
@@ -894,6 +895,117 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
               </Link>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Monthly Calculations Card */}
+      <Card variant="elevated">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <Calculator className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle>Cálculos do Mês</CardTitle>
+              <CardDescription>
+                Resumo de performance financeira
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Performance */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Performance</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  data.monthlyBalance >= 0 ? "bg-green-500" : "bg-red-500"
+                )} />
+                <span className="text-xs text-muted-foreground">
+                  {data.monthlyBalance >= 0 ? "Sobrou dinheiro" : "Faltou dinheiro"}
+                </span>
+              </div>
+            </div>
+            <span className={cn(
+              "text-lg font-bold tabular-nums",
+              data.monthlyBalance >= 0 ? "text-green-600" : "text-red-600"
+            )}>
+              {formatCurrency(data.monthlyBalance)}
+            </span>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Economizado */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-medium">Economizado</p>
+                <span className="text-xs text-muted-foreground">
+                  {Number(savingsRate) <= 0
+                    ? "Nada guardado"
+                    : Number(savingsRate) >= 20
+                      ? "Excelente!"
+                      : "Pode melhorar"}
+                </span>
+              </div>
+              <span className={cn(
+                "text-lg font-bold tabular-nums",
+                Number(savingsRate) > 0 ? "text-green-600" : "text-muted-foreground"
+              )}>
+                {savingsRate}%
+              </span>
+            </div>
+            <Progress
+              value={Math.max(0, Math.min(100, Number(savingsRate)))}
+              className="h-2"
+            />
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Custo de vida */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Custo de vida</p>
+              <span className="text-xs text-muted-foreground">
+                {data.totalExpenses > data.totalIncomes
+                  ? "Acima da renda"
+                  : data.totalExpenses > data.totalIncomes * 0.8
+                    ? "Próximo do limite"
+                    : "Dentro do orçamento"}
+              </span>
+            </div>
+            <span className={cn(
+              "text-lg font-bold tabular-nums",
+              data.totalExpenses > data.totalIncomes ? "text-red-600" : "text-foreground"
+            )}>
+              {formatCurrency(data.totalExpenses)}
+            </span>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Diário médio */}
+          {(() => {
+            const daysInMonth = getDaysInMonth(currentMonth)
+            const dailyAvg = data.totalExpenses / daysInMonth
+            return (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Diário médio</p>
+                  <span className="text-xs text-muted-foreground">
+                    Total ÷ {daysInMonth} dias
+                  </span>
+                </div>
+                <span className="text-lg font-bold tabular-nums text-primary">
+                  {formatCurrency(dailyAvg)}
+                </span>
+              </div>
+            )
+          })()}
         </CardContent>
       </Card>
 
