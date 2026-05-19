@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { createCheckoutSession, getOrCreateStripeCoupon } from "@/lib/stripe"
 import { db } from "@/db"
 import { users } from "@/db/schema/auth"
@@ -8,7 +9,7 @@ import { eq, and } from "drizzle-orm"
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
@@ -26,6 +27,15 @@ export async function POST(request: NextRequest) {
 
     if (!priceId) {
       return NextResponse.json({ error: "Price ID é obrigatório" }, { status: 400 })
+    }
+
+    const allowedPriceIds = [
+      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+      process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
+    ].filter(Boolean)
+
+    if (!allowedPriceIds.includes(priceId)) {
+      return NextResponse.json({ error: "Price ID inválido" }, { status: 400 })
     }
 
     let stripeCouponId: string | null = null
