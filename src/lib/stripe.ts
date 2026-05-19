@@ -19,8 +19,8 @@ export const PLANS = {
   pro: {
     name: "Pro",
     description: "Low ticket para sair das dívidas com ajuda da IA",
-    monthlyPrice: 9.90,
-    annualPrice: 99.00,
+    monthlyPrice: 19.90,
+    annualPrice: 190.00,
     features: [
       "Dashboard completo",
       "Categorias personalizadas",

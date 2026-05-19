@@ -32,8 +32,8 @@ const plans = {
   pro: {
     name: "Pro",
     description: "Low ticket para cobrir IA, banco e te ajudar de verdade",
-    monthlyPrice: 9.90,
-    annualPrice: 99.00,
+    monthlyPrice: 19.90,
+    annualPrice: 190.00,
     features: [
       { text: "Dashboard completo", included: true },
       { text: "Categorias personalizadas", included: true },
