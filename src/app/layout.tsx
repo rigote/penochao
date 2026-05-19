@@ -3,25 +3,25 @@ import { GeistSans } from 'geist/font/sans'
 import { ThemeProvider } from '@/app/context/theme-provider'
 import { SessionProvider } from '@/app/context/session-provider'
 import { Toaster } from 'sonner'
-import { Analytics } from '@vercel/analytics/next'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebsiteJsonLd } from '@/app/components/seo/json-ld'
+import { PrivacyConsentManager } from '@/app/components/privacy-consent'
 import './globals.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://penochao.app.br'),
   title: {
-    default: 'Penochão - Controle Financeiro Inteligente com IA',
+    default: 'Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA',
     template: '%s | Penochão'
   },
-  description: 'Organize suas finanças com IA. Leitura automática de faturas, categorização inteligente de despesas e dashboard completo. Comece grátis!',
+  description: 'Organize entradas, despesas e dívidas. Entenda o que está travando sua vida financeira e receba um plano realista para sair do aperto.',
   keywords: [
+    'sair das dívidas',
     'controle financeiro',
     'organização financeira',
     'leitura de faturas',
     'IA financeira',
     'gestão de despesas',
-    'dashboard financeiro',
+    'diagnóstico financeiro',
     'finanças pessoais',
     'categorização automática',
     'reserva de emergência',
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     locale: 'pt_BR',
     url: 'https://penochao.app.br',
     siteName: 'Penochão',
-    title: 'Penochão - Controle Financeiro Inteligente com IA',
-    description: 'Organize suas finanças com IA. Leitura automática de faturas, categorização inteligente e dashboard completo. Comece grátis!',
+    title: 'Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA',
+    description: 'Organize entradas, despesas e dívidas para entender o que está travando sua vida financeira.',
     images: [
       {
         url: '/og-image.png',
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Penochão - Controle Financeiro Inteligente com IA',
-    description: 'Organize suas finanças com IA. Leitura automática de faturas e dashboard completo.',
+    title: 'Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA',
+    description: 'Entenda suas dívidas, sua sobra real e seu próximo passo.',
     images: ['/og-image.png']
   },
   robots: {
@@ -92,10 +92,7 @@ export default function RootLayout({
             <Toaster />
           </ThemeProvider>
         </SessionProvider>
-        <Analytics />
-        {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID} />
-        )}
+        <PrivacyConsentManager />
       </body>
     </html>
   )

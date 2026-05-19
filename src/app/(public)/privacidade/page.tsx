@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { PrivacySettingsPanel } from "./privacy-settings-panel"
 
 export const metadata: Metadata = {
   title: "Política de Privacidade - Penochão",
@@ -31,6 +32,8 @@ export default function PrivacidadePage() {
       <p className="text-muted-foreground mb-8">Última atualização: {new Date().toLocaleDateString("pt-BR")}</p>
 
       <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
+        <PrivacySettingsPanel />
+
         <section>
           <h2 className="text-xl font-semibold mb-4">1. Introdução</h2>
           <p className="text-muted-foreground leading-relaxed">
@@ -56,9 +59,9 @@ export default function PrivacidadePage() {
 
           <h3 className="text-lg font-medium mt-6 mb-3">2.2 Dados coletados automaticamente</h3>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-            <li><strong>Dados de uso:</strong> páginas visitadas, funcionalidades utilizadas, tempo de uso</li>
-            <li><strong>Dados técnicos:</strong> endereço IP, tipo de navegador, sistema operacional, dispositivo</li>
-            <li><strong>Cookies:</strong> utilizamos cookies essenciais para autenticação e preferências</li>
+            <li><strong>Dados de uso opcionais:</strong> páginas visitadas e funcionalidades utilizadas apenas se você permitir analytics</li>
+            <li><strong>Dados técnicos:</strong> tipo de navegador, sistema operacional e dispositivo, quando necessários para segurança e funcionamento</li>
+            <li><strong>Cookies/tokens essenciais:</strong> autenticação, segurança da sessão e preferências</li>
           </ul>
         </section>
 
@@ -87,7 +90,8 @@ export default function PrivacidadePage() {
           <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
             <li><strong>Processadores de pagamento:</strong> Stripe, para processar pagamentos de forma segura</li>
             <li><strong>Serviços de infraestrutura:</strong> Vercel (hospedagem), Neon (banco de dados), Resend (e-mails)</li>
-            <li><strong>Inteligência Artificial:</strong> Google Gemini, para processamento de faturas (dados são anonimizados)</li>
+            <li><strong>Inteligência Artificial:</strong> Google Gemini, para processamento de faturas e sugestões quando você usa recursos de IA</li>
+            <li><strong>Analytics opcional:</strong> Google Analytics e Vercel Analytics, somente após seu consentimento</li>
             <li><strong>Obrigação legal:</strong> quando exigido por lei ou ordem judicial</li>
           </ul>
         </section>
@@ -121,7 +125,7 @@ export default function PrivacidadePage() {
             <li><strong>Oposição:</strong> opor-se ao tratamento de dados</li>
           </ul>
           <p className="text-muted-foreground leading-relaxed mt-4">
-            Para exercer esses direitos, entre em contato pelo e-mail:{" "}
+            Você pode excluir sua conta diretamente em <strong>Meu Perfil</strong>. Para exercer outros direitos, entre em contato pelo e-mail:{" "}
             <a href="mailto:privacidade@penochao.app.br" className="text-primary hover:underline">
               privacidade@penochao.app.br
             </a>
@@ -134,7 +138,7 @@ export default function PrivacidadePage() {
             Mantemos seus dados enquanto sua conta estiver ativa. Após a exclusão da conta:
           </p>
           <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-            <li>Dados pessoais são excluídos em até 30 dias</li>
+            <li>Dados pessoais e financeiros da conta são removidos após confirmação de exclusão</li>
             <li>Backups são removidos em até 90 dias</li>
             <li>Dados anonimizados podem ser mantidos para análises estatísticas</li>
             <li>Dados necessários para obrigações legais são mantidos pelo período exigido</li>
@@ -144,7 +148,7 @@ export default function PrivacidadePage() {
         <section>
           <h2 className="text-xl font-semibold mb-4">8. Cookies</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Utilizamos cookies essenciais para:
+            Utilizamos cookies/tokens essenciais para:
           </p>
           <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
             <li>Manter você autenticado no serviço</li>
@@ -152,7 +156,7 @@ export default function PrivacidadePage() {
             <li>Garantir a segurança da sessão</li>
           </ul>
           <p className="text-muted-foreground leading-relaxed mt-4">
-            Não utilizamos cookies de rastreamento ou publicidade de terceiros.
+            Analytics é opcional. Você pode permitir ou recusar nesta página ou no banner exibido no primeiro acesso.
           </p>
         </section>
 

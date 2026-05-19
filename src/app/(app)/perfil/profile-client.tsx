@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog"
 import { toast } from "sonner"
+import { signOut } from "next-auth/react"
 import {
   User,
   Mail,
@@ -89,6 +90,9 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
   const [newEmail, setNewEmail] = useState("")
   const [isChangingEmail, setIsChangingEmail] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   // Handle URL params for success/error messages
   useEffect(() => {
@@ -327,6 +331,33 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
   }
 
   const initials = (user.name?.charAt(0) || user.email.charAt(0)).toUpperCase()
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true)
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deleteConfirmation }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao excluir conta")
+      }
+
+      toast.success("Conta excluída com sucesso")
+      await signOut({ callbackUrl: "/" })
+    } catch (error) {
+      toast.error("Erro ao excluir conta", {
+        description: error instanceof Error ? error.message : "Tente novamente",
+      })
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -584,6 +615,32 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
         </Card>
       </div>
 
+      <Card variant="elevated" className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="w-5 h-5" />
+            Zona de Perigo
+          </CardTitle>
+          <CardDescription>
+            Exclua sua conta e remova seus dados pessoais e financeiros do Penochão.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Esta ação remove entradas, despesas, faturas, configurações, sessões e dados vinculados à sua conta.
+          </div>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setDeleteConfirmation("")
+              setDeleteDialogOpen(true)
+            }}
+          >
+            Excluir minha conta
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Crop Dialog */}
       <Dialog open={cropDialogOpen} onOpenChange={(open) => {
         if (!open) {
@@ -735,6 +792,62 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Excluir conta permanentemente
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação é irreversível. Seus dados financeiros, faturas, sessões e configurações serão removidos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm">
+              Se houver assinatura ativa, tentaremos cancelar no Stripe antes de remover os dados locais.
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirmation">
+                Digite <span className="font-bold">EXCLUIR</span> para confirmar
+              </Label>
+              <Input
+                id="delete-confirmation"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="EXCLUIR"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeletingAccount}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmation !== "EXCLUIR" || isDeletingAccount}
+            >
+              {isDeletingAccount ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir definitivamente"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

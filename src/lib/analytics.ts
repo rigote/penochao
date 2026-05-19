@@ -3,8 +3,15 @@
  * Provides type-safe event tracking
  */
 
+import { canLoadAnalytics, getStoredPrivacyConsent } from "@/lib/privacy-consent"
+
 // Get GA ID from environment variable
 const GA_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
+
+function hasAnalyticsConsent() {
+  if (typeof window === 'undefined') return false
+  return canLoadAnalytics(getStoredPrivacyConsent(window.localStorage))
+}
 
 // Declare gtag function for TypeScript
 declare global {
@@ -21,7 +28,7 @@ declare global {
  * Track page views
  */
 export const trackPageView = (url: string) => {
-  if (typeof window !== 'undefined' && window.gtag && GA_ID) {
+  if (typeof window !== 'undefined' && window.gtag && GA_ID && hasAnalyticsConsent()) {
     window.gtag('config', GA_ID, {
       page_path: url,
     })
@@ -37,7 +44,7 @@ export const trackEvent = (
   label?: string,
   value?: number
 ) => {
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (typeof window !== 'undefined' && window.gtag && hasAnalyticsConsent()) {
     window.gtag('event', action, {
       event_category: category,
       event_label: label,
