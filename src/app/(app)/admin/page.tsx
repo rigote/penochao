@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { users } from "@/db/schema/auth";
 import { coupons, couponRedemptions } from "@/db/schema/coupons";
-import { desc, eq, gte, count } from "drizzle-orm";
+import { desc, eq, gte, count, inArray } from "drizzle-orm";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
@@ -70,6 +70,29 @@ export default async function AdminPage() {
     existing.push(r);
     userRedemptionsMap.set(r.userId, existing);
   });
+
+  // Auto-revoke expired courtesy plans
+  const usersToDowngrade = allUsers.filter(u => {
+    if (u.plan !== "pro" || u.stripeSubscriptionId) return false;
+    const redemptions = userRedemptionsMap.get(u.id) || [];
+    if (redemptions.length === 0) return false; // Genuine manual pro
+    const hasActiveCourtesy = redemptions.some(
+      r => r.courtesyExpiresAt && new Date(r.courtesyExpiresAt) > new Date()
+    );
+    return !hasActiveCourtesy; // Has redemptions but none are active
+  });
+
+  if (usersToDowngrade.length > 0) {
+    const userIds = usersToDowngrade.map(u => u.id);
+    await db.update(users)
+      .set({ plan: "free", updatedAt: new Date() })
+      .where(inArray(users.id, userIds));
+      
+    // Update memory array to reflect changes immediately
+    usersToDowngrade.forEach(u => {
+      u.plan = "free";
+    });
+  }
 
   // Calculate stats
   const totalUsers = allUsers.length;
