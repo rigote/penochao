@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { PiggyBank } from "lucide-react"
+import { LockKeyhole, PiggyBank } from "lucide-react"
 
 const footerLinks = {
   produto: [
@@ -33,6 +33,10 @@ export function Footer() {
             <p className="text-sm text-muted-foreground">
               Controle financeiro simples e inteligente para organizar sua vida.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+              <LockKeyhole className="h-3.5 w-3.5 text-emerald-600" />
+              Dados financeiros criptografados
+            </div>
           </div>
 
           {/* Produto */}
@@ -92,7 +96,7 @@ export function Footer() {
             © {new Date().getFullYear()} Penochão. Todos os direitos reservados.
           </p>
           <p className="text-sm text-muted-foreground">
-            Feito com cuidado no Brasil
+            Dados criptografados. Clareza para decidir antes de assumir novas dívidas.
           </p>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { DespesasClient } from "./despesas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 import { decrypt, decryptNumber } from "@/lib/encryption"
 import { resolveEffectiveUserPlan } from "@/lib/subscription"
+import { getDisplayOccurrenceDate } from "@/lib/recurrence"
 
 const ITEMS_PER_PAGE = 10
 
@@ -113,6 +114,12 @@ async function getExpenses(userId: string, date: Date, page: number, type?: Expe
 
       return {
         ...e,
+        baseOccurrenceDate: e.occurrenceDate,
+        occurrenceDate: getDisplayOccurrenceDate({
+          occurrenceDate: e.occurrenceDate,
+          recurrence: e.recurrence,
+          targetMonth: date,
+        }),
         type: e.type as ExpenseType,
         description: decrypt(e.description),
         amount: decryptNumber(e.amount),

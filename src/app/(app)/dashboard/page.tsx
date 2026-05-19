@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { incomes, expenses, userSettings } from "@/db/schema/finance"
-import { eq, and, gte, lte, sql, count } from "drizzle-orm"
+import { eq, and, gte, lte, sql, count, or } from "drizzle-orm"
 import { DashboardClient } from "./dashboard-client"
 import { startOfMonth, endOfMonth, parse, format, subMonths } from "date-fns"
 import { decryptNumber } from "@/lib/encryption"
@@ -10,6 +10,28 @@ import { decryptNumber } from "@/lib/encryption"
 async function getMonthData(userId: string, date: Date) {
   const startDate = format(startOfMonth(date), "yyyy-MM-dd")
   const endDate = format(endOfMonth(date), "yyyy-MM-dd")
+  const incomeMonthCondition = or(
+    and(
+      eq(incomes.recurrence, "monthly"),
+      lte(incomes.occurrenceDate, endDate)
+    ),
+    and(
+      eq(incomes.recurrence, "once"),
+      gte(incomes.occurrenceDate, startDate),
+      lte(incomes.occurrenceDate, endDate)
+    )
+  )
+  const expenseMonthCondition = or(
+    and(
+      eq(expenses.recurrence, "monthly"),
+      lte(expenses.occurrenceDate, endDate)
+    ),
+    and(
+      eq(expenses.recurrence, "once"),
+      gte(expenses.occurrenceDate, startDate),
+      lte(expenses.occurrenceDate, endDate)
+    )
+  )
 
   // Since amounts are encrypted, we need to fetch all records and decrypt them
   // Get all incomes for the month
@@ -19,8 +41,7 @@ async function getMonthData(userId: string, date: Date) {
     .where(
       and(
         eq(incomes.userId, userId),
-        gte(incomes.occurrenceDate, startDate),
-        lte(incomes.occurrenceDate, endDate)
+        incomeMonthCondition
       )
     )
 
@@ -32,8 +53,7 @@ async function getMonthData(userId: string, date: Date) {
       and(
         eq(expenses.userId, userId),
         eq(expenses.type, "essential"),
-        gte(expenses.occurrenceDate, startDate),
-        lte(expenses.occurrenceDate, endDate)
+        expenseMonthCondition
       )
     )
 
@@ -45,8 +65,7 @@ async function getMonthData(userId: string, date: Date) {
       and(
         eq(expenses.userId, userId),
         eq(expenses.type, "non_essential"),
-        gte(expenses.occurrenceDate, startDate),
-        lte(expenses.occurrenceDate, endDate)
+        expenseMonthCondition
       )
     )
 

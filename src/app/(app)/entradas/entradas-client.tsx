@@ -61,6 +61,7 @@ interface Income {
   description: string
   amount: string
   occurrenceDate: string
+  baseOccurrenceDate?: string
   recurrence: string | null
   categoryId: string | null
   categoryName: string | null
@@ -159,7 +160,7 @@ export function EntradasClient({
     setEditingIncome(income)
     setDescription(income.description)
     setAmount(income.amount)
-    setOccurrenceDate(income.occurrenceDate)
+    setOccurrenceDate(income.baseOccurrenceDate || income.occurrenceDate)
     setCategoryId(income.categoryId || "")
     setRecurrence(income.recurrence || "once")
     setDialogOpen(true)

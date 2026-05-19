@@ -7,6 +7,7 @@ import { EntradasClient } from "./entradas-client"
 import { startOfMonth, endOfMonth, parse, format } from "date-fns"
 import { decrypt, decryptNumber } from "@/lib/encryption"
 import { resolveEffectiveUserPlan } from "@/lib/subscription"
+import { getDisplayOccurrenceDate } from "@/lib/recurrence"
 
 const ITEMS_PER_PAGE = 10
 
@@ -103,6 +104,12 @@ async function getIncomes(userId: string, date: Date, page: number) {
 
       return {
         ...i,
+        baseOccurrenceDate: i.occurrenceDate,
+        occurrenceDate: getDisplayOccurrenceDate({
+          occurrenceDate: i.occurrenceDate,
+          recurrence: i.recurrence,
+          targetMonth: date,
+        }),
         description: decrypt(i.description),
         amount: decryptNumber(i.amount),
         categoryIcon: finalIcon,

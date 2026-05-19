@@ -1,76 +1,88 @@
-import { 
-  Sparkles, 
-  Activity,
-  FileText, 
-  Shield, 
-  Smartphone, 
-  TrendingUp,
-  CreditCard
-} from "lucide-react"
+import { Activity, ArrowRight, CreditCard, FileText, Shield, Sparkles, TrendingUp } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-const features = [
+const steps = [
+  {
+    icon: FileText,
+    title: "Registre ou importe",
+    description: "Adicione entradas, despesas e faturas para montar uma base financeira limpa.",
+  },
   {
     icon: Activity,
-    title: "Raio-X Financeiro",
-    description: "Veja se sua vida básica fecha, quanto as dívidas consomem e qual é sua sobra real antes de tomar decisões.",
-  },
-  {
-    icon: CreditCard,
-    title: "Dívidas Fora do Caos",
-    description: "Separe faturas, empréstimos e renegociações do custo essencial para entender o tamanho real do problema.",
-  },
-  {
-    icon: Sparkles,
-    title: "IA Com Contexto",
-    description: "Receba sugestões inteligentes para cortar vazamentos, proteger reserva e negociar dívidas no momento certo.",
+    title: "Separe o que pesa",
+    description: "O Raio-X diferencia custo essencial, dívidas/cartão, dia a dia e estilo de vida.",
   },
   {
     icon: TrendingUp,
-    title: "Plano de Recuperação",
-    description: "Transforme entradas, despesas e dívidas em uma ordem simples: fechar o mês, criar folga, formar reserva e negociar.",
+    title: "Decida o próximo passo",
+    description: "Veja se precisa cortar, gerar caixa extra, proteger reserva ou negociar com método.",
+  },
+]
+
+const highlights = [
+  {
+    icon: CreditCard,
+    title: "Dívidas fora do caos",
+    description: "Faturas, empréstimos, parcelas e renegociações aparecem isolados do custo essencial.",
+    tone: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-300",
   },
   {
-    icon: FileText,
-    title: "Leitura de Faturas",
-    description: "Envie PDFs de faturas e extratos para transformar movimentações em transações editáveis dentro do app.",
-  },
-  {
-    icon: Smartphone,
-    title: "Substitua a Planilha",
-    description: "Registre entradas, despesas mensais e gastos do dia a dia com uma visão feita para decisão, não só anotação.",
+    icon: Sparkles,
+    title: "IA com contexto",
+    description: "Sugestões para reduzir vazamentos e priorizar ações sem te empurrar para mais parcela.",
+    tone: "bg-violet-100 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300",
   },
   {
     icon: Shield,
-    title: "Segurança Total",
-    description: "Seus dados financeiros protegidos com criptografia de ponta. Não compartilhamos informações com terceiros.",
+    title: "Tudo criptografado",
+    description: "Valores, descrições financeiras e dados sensíveis são criptografados para proteger sua privacidade.",
+    tone: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
 ]
 
 export function Features() {
   return (
-    <section id="recursos" className="py-20 sm:py-32 bg-muted/30">
+    <section id="recursos" className="border-b bg-muted/30 py-20 sm:py-28">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Não é só controlar gastos. É{" "}
-            <span className="text-primary">entender o que está te afundando</span>
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            O Penochão parte do diagnóstico: renda real, custo essencial, dívidas, sobra e plano de ação.
-          </p>
+        <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div>
+            <p className="mb-3 text-sm font-medium text-primary">Como o Penochão pensa</p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Primeiro clareza, depois plano
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-muted-foreground">
+              O produto foi desenhado para quem precisa sair do aperto sem transformar controle financeiro em mais uma tarefa pesada.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border bg-background p-4 shadow-sm sm:p-5">
+            <div className="grid gap-3 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <div key={step.title} className="relative rounded-lg border bg-card p-4">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    {index < steps.length - 1 ? (
+                      <ArrowRight className="hidden h-4 w-4 text-muted-foreground md:block" />
+                    ) : null}
+                  </div>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="group relative p-6 bg-background rounded-2xl border hover:border-primary/50 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="w-6 h-6" />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {highlights.map((item) => (
+            <div key={item.title} className="rounded-xl border bg-background p-5 shadow-sm">
+              <div className={cn("mb-4 flex h-11 w-11 items-center justify-center rounded-lg", item.tone)}>
+                <item.icon className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground">{feature.description}</p>
+              <h3 className="font-semibold">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
             </div>
           ))}
         </div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { db } from "@/db"
 import { incomes, expenses, categories } from "@/db/schema/finance"
-import { eq, and, gte, lte, desc } from "drizzle-orm"
+import { eq, and, gte, lte, desc, or } from "drizzle-orm"
 import { decrypt, decryptNumber } from "@/lib/encryption"
 import { startOfMonth, endOfMonth, format } from "date-fns"
 import { ptBR } from "date-fns/locale/pt-BR"
@@ -32,6 +32,28 @@ export async function GET(request: Request) {
 
     const startDate = `${year}-${month.padStart(2, "0")}-01`
     const endDate = format(endOfMonth(new Date(parseInt(year), parseInt(month) - 1)), "yyyy-MM-dd")
+    const incomeMonthCondition = or(
+      and(
+        eq(incomes.recurrence, "monthly"),
+        lte(incomes.occurrenceDate, endDate)
+      ),
+      and(
+        eq(incomes.recurrence, "once"),
+        gte(incomes.occurrenceDate, startDate),
+        lte(incomes.occurrenceDate, endDate)
+      )
+    )
+    const expenseMonthCondition = or(
+      and(
+        eq(expenses.recurrence, "monthly"),
+        lte(expenses.occurrenceDate, endDate)
+      ),
+      and(
+        eq(expenses.recurrence, "once"),
+        gte(expenses.occurrenceDate, startDate),
+        lte(expenses.occurrenceDate, endDate)
+      )
+    )
 
     // Fetch all incomes with categories
     const allIncomes = await db
@@ -51,8 +73,7 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(incomes.userId, user.id),
-          gte(incomes.occurrenceDate, startDate),
-          lte(incomes.occurrenceDate, endDate)
+          incomeMonthCondition
         )
       )
       .orderBy(desc(incomes.occurrenceDate))
@@ -77,8 +98,7 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(expenses.userId, user.id),
-          gte(expenses.occurrenceDate, startDate),
-          lte(expenses.occurrenceDate, endDate)
+          expenseMonthCondition
         )
       )
       .orderBy(desc(expenses.occurrenceDate))

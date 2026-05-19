@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { db } from "@/db"
 import { incomes, expenses, userSettings } from "@/db/schema/finance"
-import { eq, and, gte, lte, sql } from "drizzle-orm"
+import { eq, and, gte, lte, sql, or } from "drizzle-orm"
 import { decryptNumber } from "@/lib/encryption"
 
 export async function GET(request: Request) {
@@ -26,6 +26,28 @@ export async function GET(request: Request) {
 
     const startDate = `${year}-${month.padStart(2, "0")}-01`
     const endDate = `${year}-${month.padStart(2, "0")}-31`
+    const incomeMonthCondition = or(
+      and(
+        eq(incomes.recurrence, "monthly"),
+        lte(incomes.occurrenceDate, endDate)
+      ),
+      and(
+        eq(incomes.recurrence, "once"),
+        gte(incomes.occurrenceDate, startDate),
+        lte(incomes.occurrenceDate, endDate)
+      )
+    )
+    const expenseMonthCondition = or(
+      and(
+        eq(expenses.recurrence, "monthly"),
+        lte(expenses.occurrenceDate, endDate)
+      ),
+      and(
+        eq(expenses.recurrence, "once"),
+        gte(expenses.occurrenceDate, startDate),
+        lte(expenses.occurrenceDate, endDate)
+      )
+    )
 
     // Since amounts are encrypted, we need to fetch all records and decrypt them
     // Get all incomes for the month
@@ -35,8 +57,7 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(incomes.userId, user.id),
-          gte(incomes.occurrenceDate, startDate),
-          lte(incomes.occurrenceDate, endDate)
+          incomeMonthCondition
         )
       )
 
@@ -48,8 +69,7 @@ export async function GET(request: Request) {
         and(
           eq(expenses.userId, user.id),
           eq(expenses.type, "essential"),
-          gte(expenses.occurrenceDate, startDate),
-          lte(expenses.occurrenceDate, endDate)
+          expenseMonthCondition
         )
       )
 
@@ -61,8 +81,7 @@ export async function GET(request: Request) {
         and(
           eq(expenses.userId, user.id),
           eq(expenses.type, "non_essential"),
-          gte(expenses.occurrenceDate, startDate),
-          lte(expenses.occurrenceDate, endDate)
+          expenseMonthCondition
         )
       )
 

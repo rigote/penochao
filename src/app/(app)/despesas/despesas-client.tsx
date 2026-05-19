@@ -66,6 +66,7 @@ interface Expense {
   description: string
   amount: string
   occurrenceDate: string
+  baseOccurrenceDate?: string
   type: "essential" | "non_essential"
   recurrence: string | null
   categoryId: string | null
@@ -171,7 +172,7 @@ export function DespesasClient({
     setEditingExpense(expense)
     setDescription(expense.description)
     setAmount(expense.amount)
-    setOccurrenceDate(expense.occurrenceDate)
+    setOccurrenceDate(expense.baseOccurrenceDate || expense.occurrenceDate)
     setCategoryId(expense.categoryId || "")
     setType(expense.type)
     setRecurrence(expense.recurrence || "once")
