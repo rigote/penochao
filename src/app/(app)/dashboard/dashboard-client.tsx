@@ -27,10 +27,12 @@ import {
   ChevronUp,
   BarChart3,
   Plus,
-  Calculator
+  Calculator,
+  Tags
 } from "lucide-react"
 import { MonthSelector } from "@/app/components/shared/month-selector"
 import { ExpenseSuggestions } from "@/app/components/shared/expense-suggestions"
+import { CategoryIcon } from "@/app/components/shared/category-icon"
 import { format, getDaysInMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -78,6 +80,14 @@ interface DashboardData {
     totalTransactions: number
     achievements: Achievement[]
   }
+  expensesByCategory: Array<{
+    id: string | null
+    name: string
+    color: string | null
+    icon: string | null
+    amount: number
+    percentage: number
+  }>
 }
 
 const formatCurrency = (value: number) => {
@@ -1012,7 +1022,7 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
       {/* Charts Section */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Bar Chart - 6 months comparison */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -1087,7 +1097,7 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
                   {/* Total */}
                   <div className="pb-3 border-b">
                     <p className="text-xs text-muted-foreground mb-1">Total de Despesas</p>
-                    <p className="text-xl sm:text-2xl font-bold">{formatCompactCurrency(data.totalExpenses)}</p>
+                    <p className="text-xl sm:text-2xl font-bold" suppressHydrationWarning>{formatCompactCurrency(data.totalExpenses)}</p>
                   </div>
 
                   {/* Essenciais */}
@@ -1097,7 +1107,7 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
                       <span className="text-sm font-medium">Essenciais</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-orange-600 text-sm sm:text-base">{formatCompactCurrency(data.totalEssential)}</p>
+                      <p className="font-semibold text-orange-600 text-sm sm:text-base" suppressHydrationWarning>{formatCompactCurrency(data.totalEssential)}</p>
                       <p className="text-xs text-muted-foreground">{essentialPercentage.toFixed(0)}%</p>
                     </div>
                   </div>
@@ -1109,11 +1119,71 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
                       <span className="text-sm font-medium">Não Essenciais</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600 text-sm sm:text-base">{formatCompactCurrency(data.totalNonEssential)}</p>
+                      <p className="font-semibold text-red-600 text-sm sm:text-base" suppressHydrationWarning>{formatCompactCurrency(data.totalNonEssential)}</p>
                       <p className="text-xs text-muted-foreground">{nonEssentialPercentage.toFixed(0)}%</p>
                     </div>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-48 text-muted-foreground">
+                <p>Nenhuma despesa registrada</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Expenses by Category */}
+        <Card variant="elevated">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <Tags className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>Gastos por Categoria</CardTitle>
+                <CardDescription>
+                  Distribuição por categoria de despesa
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {data.expensesByCategory && data.expensesByCategory.length > 0 ? (
+              <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted">
+                {data.expensesByCategory.map((category) => (
+                  <div key={category.id || "no-category"} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
+                          style={{
+                            backgroundColor: `${category.color || "#94a3b8"}15`,
+                            color: category.color || "#94a3b8"
+                          }}
+                        >
+                          <CategoryIcon icon={category.icon} className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-medium truncate">{category.name}</span>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-semibold">{formatCurrency(category.amount)}</span>
+                        <span className="text-xs text-muted-foreground ml-1.5">
+                          ({category.percentage.toFixed(0)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${category.percentage}%`,
+                          backgroundColor: category.color || "#94a3b8"
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="flex items-center justify-center h-48 text-muted-foreground">

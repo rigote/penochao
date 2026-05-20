@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { incomes, expenses, userSettings } from "@/db/schema/finance"
-import { eq, and, gte, lte, sql, count, or } from "drizzle-orm"
+import { incomes, expenses, userSettings, categories } from "@/db/schema/finance"
+import { eq, and, gte, lte, sql, count, or, isNull } from "drizzle-orm"
 import { DashboardClient } from "./dashboard-client"
 import { startOfMonth, endOfMonth, parse, format, subMonths } from "date-fns"
 import { decryptNumber } from "@/lib/encryption"
@@ -108,6 +108,117 @@ async function getDashboardData(userId: string, currentDate: Date) {
   // Get current month data
   const currentMonthData = await getMonthData(userId, currentDate)
 
+  // Fetch all user categories (including system defaults)
+  const userCategories = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      icon: categories.icon,
+      color: categories.color,
+      parentId: categories.parentId,
+    })
+    .from(categories)
+    .where(
+      and(
+        or(isNull(categories.userId), eq(categories.userId, userId)),
+        eq(categories.archived, false)
+      )
+    )
+
+  const categoriesMap = new Map(userCategories.map(c => [c.id, c]))
+
+  // Calculate start and end date for current month
+  const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd")
+  const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd")
+  const expenseMonthCondition = or(
+    and(
+      eq(expenses.recurrence, "monthly"),
+      lte(expenses.occurrenceDate, endDate)
+    ),
+    and(
+      eq(expenses.recurrence, "once"),
+      gte(expenses.occurrenceDate, startDate),
+      lte(expenses.occurrenceDate, endDate)
+    )
+  )
+
+  // Fetch all expenses for the current month with category details
+  const allMonthlyExpenses = await db
+    .select({
+      amount: expenses.amount,
+      categoryId: expenses.categoryId,
+      categoryName: categories.name,
+      categoryColor: categories.color,
+      categoryIcon: categories.icon,
+      categoryParentId: categories.parentId,
+    })
+    .from(expenses)
+    .leftJoin(categories, eq(expenses.categoryId, categories.id))
+    .where(
+      and(
+        eq(expenses.userId, userId),
+        expenseMonthCondition
+      )
+    )
+
+  // Group by category
+  const expensesByCategoryMap = new Map<string, {
+    id: string | null
+    name: string
+    color: string | null
+    icon: string | null
+    amount: number
+  }>()
+
+  let totalExpensesForGrouping = 0
+
+  allMonthlyExpenses.forEach((exp) => {
+    let amount = 0
+    try {
+      amount = parseFloat(decryptNumber(exp.amount))
+    } catch {
+      return
+    }
+
+    if (amount <= 0) return
+
+    totalExpensesForGrouping += amount
+
+    const catId = exp.categoryId || "no-category"
+    const catName = exp.categoryName || "Sem Categoria"
+    let catColor = exp.categoryColor || "#94a3b8" // slate-400
+    let catIcon = exp.categoryIcon || "package"
+
+    // If there's a category and parentId, check fallback
+    if (exp.categoryId && exp.categoryParentId && !exp.categoryIcon) {
+      const parentCat = categoriesMap.get(exp.categoryParentId)
+      if (parentCat) {
+        catIcon = parentCat.icon || catIcon
+        catColor = parentCat.color || catColor
+      }
+    }
+
+    const existing = expensesByCategoryMap.get(catId)
+    if (existing) {
+      existing.amount += amount
+    } else {
+      expensesByCategoryMap.set(catId, {
+        id: exp.categoryId,
+        name: catName,
+        color: catColor,
+        icon: catIcon,
+        amount: amount,
+      })
+    }
+  })
+
+  const expensesByCategory = Array.from(expensesByCategoryMap.values())
+    .map((item) => ({
+      ...item,
+      percentage: totalExpensesForGrouping > 0 ? (item.amount / totalExpensesForGrouping) * 100 : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+
   // Get last 6 months for chart
   const historicalData = await Promise.all(
     Array.from({ length: 6 }, (_, i) => {
@@ -212,6 +323,7 @@ async function getDashboardData(userId: string, currentDate: Date) {
         isCurrentMonthPositive: monthlyBalance > 0,
       }),
     },
+    expensesByCategory,
   }
 }
 
