@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/neon-http'
-import { neon, neonConfig } from '@neondatabase/serverless'
+import { neon } from '@neondatabase/serverless'
 import * as dotenv from "dotenv"
 
 dotenv.config({ path: ".env.local" })
@@ -9,8 +9,6 @@ import * as financeSchema from './schema/finance'
 import * as aiLogsSchema from './schema/ai-logs'
 import * as couponsSchema from './schema/coupons'
 import * as stripeSchema from './schema/stripe'
-
-neonConfig.fetchConnectionCache = true
 
 const schema = { ...authSchema, ...financeSchema, ...aiLogsSchema, ...couponsSchema, ...stripeSchema }
 

@@ -92,6 +92,30 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
   const hasLimit = effectiveLimit !== null
   const isLimitReached = hasLimit && currentUsage >= effectiveLimit
 
+  // Auto-categorize a single invoice using the AI categorization API (Pro only)
+  const autoCategorize = useCallback(async (invoiceId: string, description: string, transactionType: string) => {
+    if (userPlan !== "pro" || !description) return
+    try {
+      const res = await fetch("/api/ai/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, transactionType }),
+      })
+      if (!res.ok) return
+      const { categoryId, type } = await res.json()
+      setInvoices(prev => prev.map(inv => {
+        if (inv.id !== invoiceId) return inv
+        return {
+          ...inv,
+          editedCategoryId: categoryId || inv.editedCategoryId,
+          editedType: (transactionType === "expense" && type) ? type : inv.editedType,
+        }
+      }))
+    } catch {
+      // Silent fail – dictionary/AI categorization is best-effort
+    }
+  }, [userPlan])
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -127,17 +151,18 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
       return
     }
 
-    const pdfFiles = Array.from(files).filter(file => file.type === "application/pdf")
+    const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/jpg"]
+    const validFiles = Array.from(files).filter(file => allowedMimeTypes.includes(file.type))
 
-    if (pdfFiles.length === 0) {
-      toast.error("Por favor, selecione arquivos PDF válidos")
+    if (validFiles.length === 0) {
+      toast.error("Por favor, selecione arquivos PDF ou Imagens (JPEG, PNG, WEBP) válidos")
       return
     }
 
     setUploading(true)
     let processedCount = 0
 
-    for (const file of pdfFiles) {
+    for (const file of validFiles) {
       try {
         const formData = new FormData()
         formData.append("file", file)
@@ -182,6 +207,11 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
           setInvoices(prev => [...newInvoices, ...prev]) // Add all to top
           processedCount += newInvoices.length
           toast.success(`${newInvoices.length} transações extraídas de ${file.name}`)
+
+          // Fire auto-categorization in background for each transaction (Pro only)
+          newInvoices.forEach(inv => {
+            autoCategorize(inv.id, inv.editedDescription, inv.editedTransactionType)
+          })
         } else {
           // Single transaction (backward compatibility or single invoice)
           const transaction = data.transactions?.[0] || data
@@ -207,6 +237,9 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
 
           setInvoices(prev => [newInvoice, ...prev]) // Add to top
           processedCount++
+
+          // Fire auto-categorization in background (Pro only)
+          autoCategorize(newInvoice.id, newInvoice.editedDescription, newInvoice.editedTransactionType)
         }
 
       } catch (error) {
@@ -348,7 +381,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
           Leitor Inteligente de Faturas
         </h1>
         <p className="text-muted-foreground text-lg">
-          Arraste seus PDFs e deixe nossa IA organizar suas contas automaticamente.
+          Arraste seus PDFs ou Imagens e deixe nossa IA organizar suas contas automaticamente.
         </p>
       </div>
 
@@ -434,7 +467,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
         <CardContent className="flex flex-col items-center justify-center py-24 text-center relative z-10">
           <input
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,image/jpeg,image/png,image/webp,image/jpg"
             multiple
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 disabled:cursor-not-allowed"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
@@ -506,7 +539,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
                     ? userPlan === "free"
                       ? "Você atingiu o limite gratuito de envios. Libere o poder ilimitado da IA com o plano Pro."
                       : "Você atingiu o limite do seu cupom de cortesia para este mês."
-                    : "Suportamos faturas em PDF (Nubank, C6, etc). Nossa IA extrai tudo automaticamente."
+                    : "Suportamos faturas e extratos em PDF ou Imagens (JPEG, PNG, WEBP). Nossa IA extrai tudo automaticamente."
                   }
                 </p>
               </div>
@@ -525,7 +558,7 @@ export function FaturasClient({ categories, userPlan, monthlyUsage, invoiceLimit
                 {isLimitReached ? (
                   <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> Bloqueado</span>
                 ) : (
-                  "Selecionar Arquivo PDF"
+                  "Selecionar Arquivos"
                 )}
               </Button>
             </div>

@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NEXTAUTH_DEBUG === 'true',
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID!,

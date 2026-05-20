@@ -155,8 +155,10 @@ export async function extractInvoiceData(text: string): Promise<ExtractedInvoice
 }
 
 // New function for bank statement extraction (multiple transactions)
-export async function extractBankStatementData(text: string): Promise<ExtractedBankStatementData> {
-  const isBankStmt = isBankStatement(text);
+export async function extractBankStatementData(
+  input: string | { buffer: Buffer; mimeType: string }
+): Promise<ExtractedBankStatementData> {
+  const isBankStmt = typeof input === "string" ? isBankStatement(input) : true;
   
   // Using Flash-Lite for cost efficiency ($0.10/1M input) in 2026/late 2025
   const model = genAI.getGenerativeModel({
@@ -168,7 +170,7 @@ export async function extractBankStatementData(text: string): Promise<ExtractedB
   });
 
   const prompt = isBankStmt
-    ? `You are analyzing a BANK STATEMENT (extrato bancário) in Portuguese. Extract ALL transactions from this bank statement.
+    ? `You are analyzing a BANK STATEMENT (extrato bancário) or credit card invoice. Extract ALL transactions from this document.
 
 CRITICAL: You must distinguish between INCOME (entrada) and EXPENSE (despesa) transactions.
 
@@ -192,12 +194,12 @@ EXPENSE TRANSACTIONS (transactionType: "expense"):
 - Any payment or purchase
 
 IMPORTANT INSTRUCTIONS:
-1. Extract EVERY transaction you find in the statement, not just the first one
+1. Extract EVERY transaction you find in the document, not just the first one
 2. Look for transaction lines with dates, descriptions, and values
 3. For each transaction, identify:
    - Date (convert from DD/MM/YYYY to YYYY-MM-DD format)
-   - Description (use the transaction description from the statement)
-   - Amount (ALWAYS use POSITIVE values. Even if the statement shows negative values (like -70,00), convert to positive (70.00). The system expects positive values for all transactions)
+   - Description (use the transaction description from the document)
+   - Amount (ALWAYS use POSITIVE values. Even if the document shows negative values (like -70,00), convert to positive (70.00). The system expects positive values for all transactions)
    - Transaction Type: "income" for money coming in (salaries, interest, transfers received) OR "expense" for money going out (purchases, bills, transfers sent)
    - Category type: "essential" or "non_essential" (ONLY used for expenses, but still provide a value for income transactions - use "essential" as default)
    - Recurrence: "monthly" for recurring items (salaries, bills, subscriptions) OR "once" for one-time transactions
@@ -205,7 +207,7 @@ IMPORTANT INSTRUCTIONS:
 
 4. Ignore lines like "SALDO DO DIA" (daily balance) - these are not transactions
 5. Ignore header/footer text, page numbers, and legal disclaimers
-6. If you see multiple pages (indicated by "-- X of Y --"), extract transactions from ALL pages
+6. Extract transactions from ALL pages/areas of the document
 7. For account info, extract if available: account number, agency, bank name, period
 
 Common transaction patterns in Brazilian bank statements:
@@ -225,11 +227,7 @@ EXPENSES:
 - CONDOMINIO = Condo fees (expense, usually monthly)
 - IPVA, FINANC VEIC = Vehicle taxes/financing (expense)
 
-Text:
-"""
-${text}
-"""`
-
+Extract transactions from the attached content.`
     : `You are analyzing a financial document. If this is a bank statement with multiple transactions, extract ALL of them. If it's a single invoice/bill, extract it as a single transaction.
 
 CRITICAL: Distinguish between INCOME and EXPENSE:
@@ -245,15 +243,23 @@ For bank statements, look for:
 - REMUNERACAO/SALARIO = Income (transactionType: "income")
 - Other transactions = Usually expenses (transactionType: "expense")
 
-For single invoices/bills, extract as a single transaction (usually expense).
-
-Text:
-"""
-${text}
-"""`;
+For single invoices/bills, extract as a single transaction (usually expense).`;
 
   try {
-    const result = await model.generateContent(prompt);
+    let contentInput: any[];
+    if (typeof input === "string") {
+      contentInput = [prompt, `\n\nText:\n"""\n${input}\n"""`];
+    } else {
+      const imagePart = {
+        inlineData: {
+          data: input.buffer.toString("base64"),
+          mimeType: input.mimeType,
+        },
+      };
+      contentInput = [prompt, imagePart];
+    }
+
+    const result = await model.generateContent(contentInput);
     const response = await result.response;
     const textResponse = response.text();
 

@@ -13,6 +13,7 @@ import {
   Activity,
   Calculator,
   TrendingUp,
+  MessageSquare,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -34,6 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
   Activity,
   Calculator,
   TrendingUp,
+  MessageSquare,
 }
 
 export function SidebarNav({ navItems }: { navItems: NavItem[] }) {

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Penochao">
+  <rect width="512" height="512" rx="112" fill="#16a34a"/>
+  <circle cx="256" cy="256" r="168" fill="#f8fafc"/>
+  <path d="M173 314c34 39 84 54 133 36 37-14 66-45 79-84" fill="none" stroke="#166534" stroke-width="34" stroke-linecap="round"/>
+  <path d="M160 238c27-57 77-91 134-86 41 4 76 27 99 62" fill="none" stroke="#22c55e" stroke-width="34" stroke-linecap="round"/>
+  <path d="M194 263h124" fill="none" stroke="#052e16" stroke-width="32" stroke-linecap="round"/>
+  <path d="M194 263c0-42 30-73 72-73 28 0 51 12 68 35" fill="none" stroke="#052e16" stroke-width="32" stroke-linecap="round"/>
+</svg>

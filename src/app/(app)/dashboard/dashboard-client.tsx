@@ -36,6 +36,7 @@ import { CategoryIcon } from "@/app/components/shared/category-icon"
 import { format, getDaysInMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { AiInsightsCard } from "./components/ai-insights-card"
 
 interface Achievement {
   id: string
@@ -907,6 +908,11 @@ export function DashboardClient({ data, currentMonth, userName, userPlan, catego
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Insights Card - Pro only */}
+      {userPlan === "pro" && (
+        <AiInsightsCard data={data} />
+      )}
 
       {/* Monthly Calculations Card */}
       <Card variant="elevated">

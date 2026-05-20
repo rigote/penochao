@@ -116,36 +116,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (file.type !== "application/pdf") {
+    const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!allowedMimeTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Only PDF files are supported" },
+        { error: "Apenas arquivos PDF e Imagens (JPEG, PNG, WEBP) são suportados." },
         { status: 400 }
       );
     }
 
-    // Convert file to Buffer for pdf-parse
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Extract text from PDF
-    let text = "";
-    try {
-      const pages = await parsePdf(buffer);
-      text = Array.isArray(pages) ? pages.join('\n') : String(pages);
-    } catch (e) {
-      console.error("PDF Parsing logic failed:", e);
-      return NextResponse.json({ error: "Failed to read PDF file content" }, { status: 422 });
-    }
+    let bankStatementData;
+    let inputTokensEstimate = 0;
+    const isImage = file.type.startsWith("image/");
 
-    if (!text || text.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Could not extract text from PDF. It might be an image-only PDF." },
-        { status: 422 }
-      );
+    if (isImage) {
+      // For images, pass buffer directly to extractBankStatementData
+      bankStatementData = await extractBankStatementData({
+        buffer,
+        mimeType: file.type
+      });
+      // Gemini 2.5 Flash Lite image input is billed at ~258 tokens per image
+      inputTokensEstimate = 300;
+    } else {
+      // Extract text from PDF
+      let text = "";
+      try {
+        const pages = await parsePdf(buffer);
+        text = Array.isArray(pages) ? pages.join('\n') : String(pages);
+      } catch (e) {
+        console.error("PDF Parsing logic failed:", e);
+        return NextResponse.json({ error: "Failed to read PDF file content" }, { status: 422 });
+      }
+
+      if (!text || text.trim().length === 0) {
+        return NextResponse.json(
+          { error: "Não foi possível extrair o texto do PDF. O PDF pode ser composto apenas por imagens desprotegidas." },
+          { status: 422 }
+        );
+      }
+
+      inputTokensEstimate = Math.ceil(text.length / 4);
+      bankStatementData = await extractBankStatementData(text);
     }
 
     // CHECK BUDGET
-
     const [usageStats] = await db
       .select({ totalCost: sql<string>`COALESCE(SUM(${aiUsageLogs.costBrl}), 0)` })
       .from(aiUsageLogs)
@@ -161,10 +177,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Process with Gemini
-    const inputTokensEstimate = Math.ceil(text.length / 4);
-    const bankStatementData = await extractBankStatementData(text);
-
     // Log Usage
     const outputTokensEstimate = JSON.stringify(bankStatementData).length / 4;
     const inputCost = (inputTokensEstimate / 1_000_000) * COST_PER_MILLION_INPUT;
@@ -175,7 +187,7 @@ export async function POST(req: NextRequest) {
       id: crypto.randomUUID(),
       userId: user.id,
       model: "gemini-2.5-flash-lite",
-      inputType: "pdf_invoice",
+      inputType: isImage ? "image_invoice" : "pdf_invoice",
       inputTokens: Math.ceil(inputTokensEstimate),
       outputTokens: Math.ceil(outputTokensEstimate),
       costBrl: (totalCost).toFixed(6),
