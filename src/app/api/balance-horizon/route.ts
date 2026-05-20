@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { incomes, expenses } from "@/db/schema/finance"
 import { eq, and, gte, lte } from "drizzle-orm"
 import { decryptNumber } from "@/lib/encryption"
+import { resolveEffectiveUserPlan } from "@/lib/subscription"
 import {
   format,
   startOfMonth,
@@ -24,6 +25,11 @@ export async function GET(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 })
+  }
+
+  const effectiveUser = await resolveEffectiveUserPlan(user)
+  if (effectiveUser.plan !== "pro") {
+    return NextResponse.json({ error: "Feature restricted to Pro plan" }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)

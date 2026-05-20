@@ -30,6 +30,7 @@ import {
   Send,
   Loader2,
   CheckCircle2,
+  Lock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -50,12 +51,13 @@ const formatCurrency = (value: number) =>
     currency: "BRL",
   }).format(value)
 
-export function PrevisaoDiariaClient() {
+export function PrevisaoDiariaClient({ userPlan = "free" }: { userPlan?: "free" | "pro" }) {
   const router = useRouter()
   const [items, setItems] = useState<DailyItem[]>([])
   const [days, setDays] = useState("30")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [planDialogOpen, setPlanDialogOpen] = useState(false)
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false)
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [mounted, setMounted] = useState(false)
@@ -330,10 +332,25 @@ export function PrevisaoDiariaClient() {
       {items.length > 0 && dailyBudget > 0 && (
         <Button
           className="w-full gap-2 h-12 text-base bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
-          onClick={() => setPlanDialogOpen(true)}
+          onClick={() => {
+            if (userPlan === "free") {
+              setUpgradeDialogOpen(true)
+            } else {
+              setPlanDialogOpen(true)
+            }
+          }}
         >
-          <Send className="w-4 h-4" />
-          Adicionar ao planejamento
+          {userPlan === "free" ? (
+            <>
+              <Lock className="w-4 h-4" />
+              Adicionar ao planejamento (Premium)
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Adicionar ao planejamento
+            </>
+          )}
         </Button>
       )}
 
@@ -466,6 +483,49 @@ export function PrevisaoDiariaClient() {
                   Confirmar
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade/Premium Dialog for Free Users */}
+      <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Funcionalidade Premium
+            </DialogTitle>
+            <DialogDescription>
+              O agendamento em lote de despesas no planejamento mensal é exclusivo para assinantes do plano Pro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mb-4">
+              Com o plano Pro, você pode transformar instantaneamente sua simulação de diário em lançamentos reais no seu calendário de despesas para qualquer mês.
+            </p>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setUpgradeDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Talvez depois
+            </Button>
+            <Button
+              onClick={() => {
+                setUpgradeDialogOpen(false)
+                router.push("/assinatura")
+              }}
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90"
+            >
+              Desbloquear Pro
             </Button>
           </DialogFooter>
         </DialogContent>

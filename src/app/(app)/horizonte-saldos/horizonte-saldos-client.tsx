@@ -16,10 +16,12 @@ import {
   ChevronRight,
   Loader2,
   BarChart3,
+  Lock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format, addMonths } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import Link from "next/link"
 
 interface DayBalance {
   day: number
@@ -62,13 +64,14 @@ const getBalanceColor = (balance: number) => {
   return { bg: "transparent", text: "text-muted-foreground" }
 }
 
-export function HorizonteSaldosClient() {
+export function HorizonteSaldosClient({ userPlan = "free" }: { userPlan?: "free" | "pro" }) {
   const [data, setData] = useState<MonthData[]>([])
   const [loading, setLoading] = useState(true)
   const [startDate, setStartDate] = useState(() => format(new Date(), "yyyy-MM"))
   const [monthsCount, setMonthsCount] = useState("3")
 
   const fetchData = useCallback(async () => {
+    if (userPlan === "free") return
     setLoading(true)
     try {
       const res = await fetch(
@@ -83,11 +86,52 @@ export function HorizonteSaldosClient() {
     } finally {
       setLoading(false)
     }
-  }, [startDate, monthsCount])
+  }, [startDate, monthsCount, userPlan])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (userPlan === "pro") {
+      fetchData()
+    }
+  }, [fetchData, userPlan])
+
+  if (userPlan === "free") {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium text-primary">Projeção</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Horizonte de Saldos
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Projeção diária do saldo acumulado mês a mês.
+          </p>
+        </div>
+
+        {/* Paywall Card */}
+        <Card variant="elevated" className="overflow-hidden relative min-h-[400px] flex items-center justify-center">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary/5 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
+          
+          <CardContent className="relative py-12 text-center max-w-md mx-auto flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold tracking-tight mb-3">Horizonte de Saldos</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+              Esta é uma ferramenta premium exclusiva para assinantes Pro. Visualize como o seu saldo diário irá se comportar ao longo dos próximos meses com base em suas entradas e despesas recorrentes planejadas.
+            </p>
+            <Button asChild className="rounded-xl px-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 transition-opacity shadow-lg shadow-purple-500/20">
+              <Link href="/assinatura">Desbloquear Plano Pro</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const handlePrevious = () => {
     const [y, m] = startDate.split("-").map(Number)

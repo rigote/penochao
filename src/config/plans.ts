@@ -27,6 +27,7 @@ export const PLAN_FEATURES = {
     "Raio-X financeiro inicial",
     "Até 3 faturas/mês com IA",
     "Gráficos básicos",
+    "Simulador de previsão diária",
   ],
   pro: [
     "Dashboard completo",
@@ -36,6 +37,8 @@ export const PLAN_FEATURES = {
     "Sugestões inteligentes para reduzir dívidas",
     "Relatórios mensais em PDF",
     "Plano de recuperação financeira",
+    "Projeção do Horizonte de Saldos",
+    "Agendamento em lote de despesas",
   ],
 } as const
 

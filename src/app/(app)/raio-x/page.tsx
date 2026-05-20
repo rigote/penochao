@@ -9,6 +9,7 @@ import {
   BadgeCheck,
   CreditCard,
   HeartPulse,
+  Lock,
   PiggyBank,
   Shield,
   TrendingUp,
@@ -254,35 +255,70 @@ export default async function RaioXPage() {
               emphasized
             />
 
-            <div className="rounded-xl bg-primary/10 border border-primary/20 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Próximo passo recomendado</p>
-                  <p className="text-sm text-muted-foreground mt-1">{diagnosis.nextStep}</p>
+            {user.plan === "free" ? (
+              <div className="relative rounded-xl bg-primary/10 border border-primary/20 p-4 overflow-hidden">
+                <div className="blur-[3px] select-none pointer-events-none">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="font-medium">Próximo passo recomendado</p>
+                      <p className="text-sm text-muted-foreground mt-1">{diagnosis.nextStep}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+                  <Link href="/assinatura" className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Liberar recomendação com o Pro
+                  </Link>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-xl bg-primary/10 border border-primary/20 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Próximo passo recomendado</p>
+                    <p className="text-sm text-muted-foreground mt-1">{diagnosis.nextStep}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card variant="elevated">
+      <Card variant="elevated" className="relative overflow-hidden">
         <CardHeader>
           <CardTitle>Plano De Ação Inicial</CardTitle>
           <CardDescription>
             O objetivo agora é sair do caos mental e criar uma ordem simples de execução.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          {diagnosis.recommendations.map((recommendation, index) => (
-            <div key={recommendation} className="rounded-xl border p-4">
-              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                {index + 1}
+        <CardContent className="relative">
+          {user.plan === "free" && (
+            <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-[4px] z-10 flex flex-col items-center justify-center text-center p-6">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                <Lock className="w-6 h-6 text-muted-foreground" />
               </div>
-              <p className="text-sm leading-relaxed">{recommendation}</p>
+              <h3 className="font-semibold text-lg">Plano de Ação Premium</h3>
+              <p className="text-sm text-muted-foreground max-w-[300px] mb-4">
+                Assine o plano Pro para liberar as sugestões inteligentes da IA e seu plano de recuperação financeira.
+              </p>
+              <Button asChild size="sm" className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 transition-opacity">
+                <Link href="/assinatura">Ser Pro</Link>
+              </Button>
             </div>
-          ))}
+          )}
+          <div className={cn("grid gap-4 md:grid-cols-3", user.plan === "free" && "blur-[3px] select-none pointer-events-none")}>
+            {diagnosis.recommendations.map((recommendation, index) => (
+              <div key={recommendation} className="rounded-xl border p-4">
+                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  {index + 1}
+                </div>
+                <p className="text-sm leading-relaxed">{recommendation}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
