@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Crown,
   Activity,
-  PiggyBank,
   LogOut,
   Menu,
   X,
@@ -30,6 +29,7 @@ import { cn } from "@/lib/utils"
 import { signOut } from "next-auth/react"
 import { useTheme } from "@/app/context/theme-provider"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
+import { ThemeLogo } from "@/app/components/shared/theme-logo"
 
 interface NavItem {
   href: string
@@ -76,11 +76,8 @@ export function MobileNav({ navItems, user }: { navItems: NavItem[], user: User 
       {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="flex h-14 items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <PiggyBank className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg">Penochão</span>
+          <Link href="/dashboard" className="flex items-center">
+            <ThemeLogo className="h-9" priority />
           </Link>
 
           <div className="flex items-center gap-1">
@@ -149,14 +146,8 @@ export function MobileNav({ navItems, user }: { navItems: NavItem[], user: User 
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center gap-3 p-5 border-b">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <PiggyBank className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <span className="text-lg font-bold">Penochão</span>
-              <p className="text-xs text-muted-foreground">Finanças Pessoais</p>
-            </div>
+          <div className="flex items-center border-b p-5">
+            <ThemeLogo className="h-10" />
           </div>
 
           {/* Navigation */}

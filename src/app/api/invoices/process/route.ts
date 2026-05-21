@@ -16,9 +16,6 @@ const MONTHLY_BUDGET_BRL = 20.00;
 const COST_PER_MILLION_INPUT = 0.90; // ~$0.10 USD + margin -> R$ 0.90 (Conservative)
 const COST_PER_MILLION_OUTPUT = 3.00; // ~$0.40 USD + margin -> R$ 3.00 (Conservative)
 
-// Free plan limit
-const FREE_PLAN_MONTHLY_LIMIT = 3;
-
 // Helper to parse PDF using unpdf
 const parsePdf = async (buffer: Buffer) => {
   // unpdf requires Uint8Array, not Buffer
@@ -58,7 +55,13 @@ export async function POST(req: NextRequest) {
 
     const user = await resolveEffectiveUserPlan(foundUser);
 
-    // Check free plan limit
+    if (user.plan !== "pro") {
+      return NextResponse.json(
+        { error: "O processamento de faturas com IA está disponível apenas no plano Pro." },
+        { status: 403 }
+      );
+    }
+
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -66,7 +69,6 @@ export async function POST(req: NextRequest) {
     const endOfMonth = new Date(startOfMonth);
     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
 
-    // Get current month usage
     const [usage] = await db
       .select({ count: count() })
       .from(invoices)
@@ -78,14 +80,7 @@ export async function POST(req: NextRequest) {
         )
       );
 
-    if (user.plan === "free") {
-      if (usage.count >= FREE_PLAN_MONTHLY_LIMIT) {
-        return NextResponse.json(
-          { error: `Limite de ${FREE_PLAN_MONTHLY_LIMIT} faturas mensais atingido. Faça upgrade para o plano Pro.` },
-          { status: 429 }
-        );
-      }
-    } else if (user.plan === "pro") {
+    if (user.plan === "pro") {
       // Check if user has an active courtesy redemption with invoice limit
       const activeCourtesy = await db.query.couponRedemptions.findFirst({
         where: and(
@@ -103,7 +98,6 @@ export async function POST(req: NextRequest) {
           );
         }
       }
-      // If no courtesy limit or no active courtesy, Pro users have unlimited
     }
 
     const formData = await req.formData();

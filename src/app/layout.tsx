@@ -1,14 +1,16 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { ThemeProvider } from '@/app/context/theme-provider'
 import { SessionProvider } from '@/app/context/session-provider'
 import { Toaster } from 'sonner'
 import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebsiteJsonLd } from '@/app/components/seo/json-ld'
 import { PrivacyConsentManager } from '@/app/components/privacy-consent'
+import { PWAProvider } from '@/app/components/pwa/pwa-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://penochao.app.br'),
+  applicationName: 'Penochao',
   title: {
     default: 'Penochão - Saia das Dívidas com Diagnóstico Financeiro e IA',
     template: '%s | Penochão'
@@ -30,6 +32,14 @@ export const metadata: Metadata = {
   authors: [{ name: 'Penochão' }],
   creator: 'Penochão',
   publisher: 'Penochão',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Penochao',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
@@ -64,10 +74,23 @@ export const metadata: Metadata = {
     }
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/apple-icon.png',
+    icon: [
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: ['/favicon-16.png', '/favicon-32.png'],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0b1f16',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({
@@ -90,6 +113,7 @@ export default function RootLayout({
           >
             {children}
             <Toaster />
+            <PWAProvider />
           </ThemeProvider>
         </SessionProvider>
         <PrivacyConsentManager />

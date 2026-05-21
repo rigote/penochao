@@ -89,6 +89,13 @@ interface Stats {
   total: number
 }
 
+interface PendingCategoryPropagation {
+  incomeId: string
+  description: string
+  categoryId: string
+  matchCount: number
+}
+
 interface EntradasClientProps {
   initialIncomes: Income[]
   categories: Category[]
@@ -132,6 +139,8 @@ export function EntradasClient({
   // Selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeletingBulk, setIsDeletingBulk] = useState(false)
+  const [pendingCategoryPropagation, setPendingCategoryPropagation] = useState<PendingCategoryPropagation | null>(null)
+  const [isApplyingCategoryPropagation, setIsApplyingCategoryPropagation] = useState(false)
 
   // Reset selection when pagination/month changes
   useEffect(() => {
@@ -180,28 +189,107 @@ export function EntradasClient({
     }
 
     try {
+      let response: Response
+
       if (editingIncome) {
-        await fetch(`/api/incomes/${editingIncome.id}`, {
+        response = await fetch(`/api/incomes/${editingIncome.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
       } else {
-        await fetch("/api/incomes", {
+        response = await fetch("/api/incomes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
       }
 
+      if (!response.ok) {
+        throw new Error("Failed to save income")
+      }
+
+      const savedIncome = await response.json()
+      const normalizedDescription = description.trim()
+      const shouldCheckCategoryPropagation = Boolean(
+        editingIncome &&
+        categoryId &&
+        categoryId !== (editingIncome.categoryId || "")
+      )
+
       setDialogOpen(false)
       resetForm()
+
+      if (shouldCheckCategoryPropagation && normalizedDescription) {
+        const propagationResponse = await fetch("/api/incomes/apply-category-by-description", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoryId,
+            description: normalizedDescription,
+            excludeId: savedIncome.id,
+          }),
+        })
+
+        if (!propagationResponse.ok) {
+          throw new Error("Failed to check matching incomes")
+        }
+
+        const propagationData = await propagationResponse.json()
+
+        if (propagationData.otherMatchesCount > 0) {
+          setPendingCategoryPropagation({
+            incomeId: savedIncome.id,
+            description: normalizedDescription,
+            categoryId,
+            matchCount: propagationData.otherMatchesCount,
+          })
+          return
+        }
+      }
+
       router.refresh()
     } catch (error) {
       console.error("Error saving income:", error)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function applyCategoryToMatchingIncomes() {
+    if (!pendingCategoryPropagation) {
+      return
+    }
+
+    setIsApplyingCategoryPropagation(true)
+
+    try {
+      const response = await fetch("/api/incomes/apply-category-by-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: pendingCategoryPropagation.categoryId,
+          description: pendingCategoryPropagation.description,
+          excludeId: pendingCategoryPropagation.incomeId,
+          apply: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to apply income category propagation")
+      }
+    } catch (error) {
+      console.error("Error applying income category propagation:", error)
+    } finally {
+      setIsApplyingCategoryPropagation(false)
+      setPendingCategoryPropagation(null)
+      router.refresh()
+    }
+  }
+
+  function cancelCategoryPropagation() {
+    setPendingCategoryPropagation(null)
+    router.refresh()
   }
 
   // Initial trigger for single delete
@@ -297,6 +385,40 @@ export function EntradasClient({
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               {isDeletingBulk ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingCategoryPropagation !== null}
+        onOpenChange={(open) => {
+          if (!open && pendingCategoryPropagation && !isApplyingCategoryPropagation) {
+            cancelCategoryPropagation()
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aplicar categoria em entradas iguais?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingCategoryPropagation
+                ? `Encontrei ${pendingCategoryPropagation.matchCount} outra${pendingCategoryPropagation.matchCount > 1 ? "s" : ""} entrada${pendingCategoryPropagation.matchCount > 1 ? "s" : ""} com a descrição exata "${pendingCategoryPropagation.description}". Deseja aplicar a mesma categoria em todas?`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApplyingCategoryPropagation} onClick={cancelCategoryPropagation}>
+              Não, manter só esta
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                applyCategoryToMatchingIncomes()
+              }}
+              disabled={isApplyingCategoryPropagation}
+            >
+              {isApplyingCategoryPropagation ? "Aplicando..." : "Sim, aplicar em todas"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Activity, ArrowLeft, BadgeCheck, CreditCard, LockKeyhole, PiggyBank, Shield, TrendingDown } from "lucide-react"
+import { Activity, ArrowLeft, BadgeCheck, CreditCard, LockKeyhole, Shield, TrendingDown } from "lucide-react"
 import { UserAuthForm } from "@/app/login/components/user-auth-form"
 import { ThemeToggle } from "@/app/components/shared/theme-toggle"
+import { ThemeLogo } from "@/app/components/shared/theme-logo"
 import { cn } from "@/lib/utils"
 
 const previewRows = [
@@ -24,10 +25,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:52px_52px] opacity-40" />
           <div className="relative flex min-h-screen flex-col justify-between p-10 xl:p-14">
             <Link href="/" className="flex w-fit items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <PiggyBank className="h-5 w-5" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">Penochão</span>
+              <ThemeLogo className="h-10" priority />
             </Link>
 
             <div className="max-w-xl">
@@ -99,11 +97,8 @@ export default function LoginPage() {
             </Link>
 
             <div className="mb-8 lg:hidden">
-              <Link href="/" className="mb-5 flex w-fit items-center gap-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                  <PiggyBank className="h-5 w-5" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">Penochão</span>
+              <Link href="/" className="mb-5 flex w-fit items-center">
+                <ThemeLogo className="h-11" priority />
               </Link>
             </div>
 

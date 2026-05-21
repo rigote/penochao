@@ -25,7 +25,7 @@ export const PLAN_FEATURES = {
   free: [
     "Dashboard financeiro",
     "Raio-X financeiro inicial",
-    "Até 3 faturas/mês com IA",
+    "Registro manual de entradas e despesas",
     "Gráficos básicos",
     "Simulador de previsão diária",
   ],

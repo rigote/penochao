@@ -24,6 +24,10 @@ export default async function FaturasPage() {
 
   const user = await resolveEffectiveUserPlan(foundUser)
 
+  if (user.plan !== "pro") {
+    redirect("/assinatura")
+  }
+
   const categories = await db.query.categories.findMany({
     orderBy: (categories, { asc }) => [asc(categories.name)],
   })
@@ -64,8 +68,6 @@ export default async function FaturasPage() {
       invoiceLimit = activeCourtesy.invoiceLimit;
       courtesyExpiresAt = activeCourtesy.courtesyExpiresAt;
     }
-  } else if (user.plan === "free") {
-    invoiceLimit = 3; // Free plan limit
   }
 
   return <FaturasClient

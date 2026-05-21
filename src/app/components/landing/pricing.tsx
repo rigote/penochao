@@ -19,7 +19,7 @@ const plans = {
     features: [
       { text: "Dashboard financeiro", included: true },
       { text: "Raio-X financeiro inicial", included: true },
-      { text: "Até 3 faturas/mês com IA", included: true },
+      { text: "Registro manual de entradas e despesas", included: true },
       { text: "Gráficos básicos", included: true },
       { text: "Simulador de previsão diária", included: true },
       { text: "Projeção do Horizonte de Saldos", included: false },
@@ -40,6 +40,7 @@ const plans = {
       { text: "Dashboard completo", included: true },
       { text: "Categorias personalizadas", included: true },
       { text: "Faturas ilimitadas com IA", included: true },
+      { text: "Assistente financeiro com IA", included: true },
       { text: "Raio-X financeiro completo", included: true },
       { text: "Projeção do Horizonte de Saldos", included: true },
       { text: "Agendamento em lote de despesas", included: true },

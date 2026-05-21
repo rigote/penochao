@@ -33,11 +33,11 @@ const faqItems = [
   },
   {
     question: "Posso usar o Penochão gratuitamente?",
-    answer: "Sim! O plano gratuito inclui dashboard completo, categorias personalizadas e até 3 leituras de faturas com IA por mês.",
+    answer: "Sim! O plano gratuito inclui os recursos essenciais para organizar receitas, despesas e acompanhar seu diagnóstico financeiro básico. Os recursos com IA ficam disponíveis no plano Pro.",
   },
   {
     question: "Qual a diferença do plano Pro?",
-    answer: "O plano Pro oferece leitura ilimitada de faturas com IA, exportação de relatórios em PDF e Excel, suporte prioritário e acesso antecipado a novos recursos.",
+    answer: "O plano Pro libera os recursos com IA, como leitura de faturas, assistente financeiro e análises inteligentes, além de exportação de relatórios em PDF e Excel e suporte prioritário.",
   },
   {
     question: "Posso cancelar a qualquer momento?",

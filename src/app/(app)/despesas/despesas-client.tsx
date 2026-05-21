@@ -97,6 +97,13 @@ interface Stats {
   total: number
 }
 
+interface PendingCategoryPropagation {
+  expenseId: string
+  description: string
+  categoryId: string
+  matchCount: number
+}
+
 interface DespesasClientProps {
   initialExpenses: Expense[]
   categories: Category[]
@@ -142,6 +149,8 @@ export function DespesasClient({
   // Selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeletingBulk, setIsDeletingBulk] = useState(false)
+  const [pendingCategoryPropagation, setPendingCategoryPropagation] = useState<PendingCategoryPropagation | null>(null)
+  const [isApplyingCategoryPropagation, setIsApplyingCategoryPropagation] = useState(false)
 
   // Reset selection when pagination/month changes
   useEffect(() => {
@@ -194,28 +203,107 @@ export function DespesasClient({
     }
 
     try {
+      let response: Response
+
       if (editingExpense) {
-        await fetch(`/api/expenses/${editingExpense.id}`, {
+        response = await fetch(`/api/expenses/${editingExpense.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
       } else {
-        await fetch("/api/expenses", {
+        response = await fetch("/api/expenses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
       }
 
+      if (!response.ok) {
+        throw new Error("Failed to save expense")
+      }
+
+      const savedExpense = await response.json()
+      const normalizedDescription = description.trim()
+      const shouldCheckCategoryPropagation = Boolean(
+        editingExpense &&
+        categoryId &&
+        categoryId !== (editingExpense.categoryId || "")
+      )
+
       setDialogOpen(false)
       resetForm()
+
+      if (shouldCheckCategoryPropagation && normalizedDescription) {
+        const propagationResponse = await fetch("/api/expenses/apply-category-by-description", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoryId,
+            description: normalizedDescription,
+            excludeId: savedExpense.id,
+          }),
+        })
+
+        if (!propagationResponse.ok) {
+          throw new Error("Failed to check matching expenses")
+        }
+
+        const propagationData = await propagationResponse.json()
+
+        if (propagationData.otherMatchesCount > 0) {
+          setPendingCategoryPropagation({
+            expenseId: savedExpense.id,
+            description: normalizedDescription,
+            categoryId,
+            matchCount: propagationData.otherMatchesCount,
+          })
+          return
+        }
+      }
+
       router.refresh()
     } catch (error) {
       console.error("Error saving expense:", error)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function applyCategoryToMatchingExpenses() {
+    if (!pendingCategoryPropagation) {
+      return
+    }
+
+    setIsApplyingCategoryPropagation(true)
+
+    try {
+      const response = await fetch("/api/expenses/apply-category-by-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: pendingCategoryPropagation.categoryId,
+          description: pendingCategoryPropagation.description,
+          excludeId: pendingCategoryPropagation.expenseId,
+          apply: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to apply expense category propagation")
+      }
+    } catch (error) {
+      console.error("Error applying expense category propagation:", error)
+    } finally {
+      setIsApplyingCategoryPropagation(false)
+      setPendingCategoryPropagation(null)
+      router.refresh()
+    }
+  }
+
+  function cancelCategoryPropagation() {
+    setPendingCategoryPropagation(null)
+    router.refresh()
   }
 
   // Initial trigger for single delete
@@ -320,6 +408,40 @@ export function DespesasClient({
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               {isDeletingBulk ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingCategoryPropagation !== null}
+        onOpenChange={(open) => {
+          if (!open && pendingCategoryPropagation && !isApplyingCategoryPropagation) {
+            cancelCategoryPropagation()
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aplicar categoria em despesas iguais?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingCategoryPropagation
+                ? `Encontrei ${pendingCategoryPropagation.matchCount} outra${pendingCategoryPropagation.matchCount > 1 ? "s" : ""} despesa${pendingCategoryPropagation.matchCount > 1 ? "s" : ""} com a descrição exata "${pendingCategoryPropagation.description}". Deseja aplicar a mesma categoria em todas?`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApplyingCategoryPropagation} onClick={cancelCategoryPropagation}>
+              Não, manter só esta
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                applyCategoryToMatchingExpenses()
+              }}
+              disabled={isApplyingCategoryPropagation}
+            >
+              {isApplyingCategoryPropagation ? "Aplicando..." : "Sim, aplicar em todas"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

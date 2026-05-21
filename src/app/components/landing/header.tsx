@@ -6,8 +6,9 @@ import Image from "next/image"
 import { useTheme } from "@/app/context/theme-provider"
 import { useSession } from "next-auth/react"
 import { Button } from "@/app/components/ui/button"
-import { Menu, X, PiggyBank, Moon, Sun, LayoutDashboard } from "lucide-react"
+import { Menu, X, Moon, Sun, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ThemeLogo } from "@/app/components/shared/theme-logo"
 
 const navigation = [
   { name: "Recursos", href: "#recursos" },
@@ -48,11 +49,8 @@ export function Header() {
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground">
-              <PiggyBank className="w-5 h-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">Penochão</span>
+          <Link href="/" className="flex items-center">
+            <ThemeLogo className="h-10" priority />
           </Link>
 
           {/* Desktop Navigation */}
@@ -163,11 +161,8 @@ export function Header() {
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b">
-                  <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground">
-                      <PiggyBank className="w-5 h-5" />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight">Penochão</span>
+                  <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                    <ThemeLogo className="h-10" />
                   </Link>
                   <button
                     type="button"

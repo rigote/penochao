@@ -39,7 +39,7 @@ export function SoftwareApplicationJsonLd() {
         name: 'Free',
         price: '0',
         priceCurrency: 'BRL',
-        description: 'Plano gratuito com até 3 faturas/mês',
+        description: 'Plano gratuito com controle financeiro essencial e registro manual',
       },
       {
         '@type': 'Offer',

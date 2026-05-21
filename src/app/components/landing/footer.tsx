@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { LockKeyhole, PiggyBank } from "lucide-react"
+import { LockKeyhole } from "lucide-react"
+import { ThemeLogo } from "@/app/components/shared/theme-logo"
 
 const footerLinks = {
   produto: [
@@ -24,11 +25,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-                <PiggyBank className="w-4 h-4" />
-              </div>
-              <span className="text-lg font-bold">Penochão</span>
+            <Link href="/" className="mb-4 flex items-center">
+              <ThemeLogo className="h-9" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Controle financeiro simples e inteligente para organizar sua vida.

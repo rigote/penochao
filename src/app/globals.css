@@ -10,6 +10,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overscroll-behavior-y: none;
   }
 
   /* Custom scrollbar */
@@ -30,6 +31,159 @@
   ::-webkit-scrollbar-thumb:hover {
     background: oklch(0.5 0.025 265 / 60%);
   }
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-standalone body {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.app-loading-shell {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgb(45 212 191 / 0.08), transparent 26%),
+    radial-gradient(circle at bottom right, rgb(124 58 237 / 0.06), transparent 24%),
+    var(--background);
+}
+
+.app-loading-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.6;
+}
+
+.app-loading-orb-primary {
+  top: 10%;
+  left: 12%;
+  height: 180px;
+  width: 180px;
+  background: rgb(0 184 169 / 0.08);
+}
+
+.app-loading-orb-secondary {
+  right: 10%;
+  bottom: 12%;
+  height: 180px;
+  width: 180px;
+  background: rgb(29 78 216 / 0.08);
+}
+
+.app-loading-skeleton {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: min(100%, 1080px);
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+}
+
+.app-loading-skeleton-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-loading-skeleton-pill {
+  height: 0.9rem;
+  width: 7rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.app-skeleton-surface {
+  border-radius: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  padding: 1.25rem;
+  box-shadow: 0 20px 50px rgb(15 23 42 / 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.app-skeleton-card {
+  height: 7rem;
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 94%, transparent), color-mix(in srgb, var(--muted) 65%, transparent));
+  box-shadow: 0 14px 40px rgb(15 23 42 / 0.05);
+}
+
+.app-skeleton-card-hero {
+  background:
+    linear-gradient(135deg, rgb(6 27 78 / 0.96), rgb(8 43 111 / 0.94) 54%, rgb(0 184 169 / 0.9));
+}
+
+.app-skeleton-line,
+.app-skeleton-block,
+.app-skeleton-card,
+.app-loading-skeleton-pill {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-skeleton-line::after,
+.app-skeleton-block::after,
+.app-skeleton-card::after,
+.app-loading-skeleton-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+  animation: shimmer 1.6s infinite;
+}
+
+.app-skeleton-line {
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.75rem;
+  background: color-mix(in srgb, var(--muted) 78%, var(--card));
+}
+
+.app-skeleton-block {
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--muted) 68%, var(--card));
+}
+
+.app-loading-progress {
+  height: 4px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.app-loading-progress-subtle {
+  max-width: 12rem;
+  align-self: center;
+  opacity: 0.72;
+}
+
+.app-loading-progress-bar {
+  height: 100%;
+  width: 35%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), oklch(0.6 0.25 330), oklch(0.65 0.2 270));
+  animation: app-progress-slide 1.1s ease-in-out infinite;
 }
 
 @layer components {
@@ -204,6 +358,16 @@
   }
 }
 
+@keyframes app-progress-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 :root {
   --radius: 0.75rem;
 
@@ -215,7 +379,6 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.03 265);
   --primary: oklch(0.55 0.28 295);
-  /* Roxo mais rico e vibrante */
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0.025 270);
   --secondary-foreground: oklch(0.25 0.035 265);
@@ -247,7 +410,6 @@
   --popover: oklch(0.16 0.03 270);
   --popover-foreground: oklch(0.97 0.005 265);
   --primary: oklch(0.72 0.25 295);
-  /* Roxo mais brilhante no dark mode */
   --primary-foreground: oklch(0.12 0.03 270);
   --secondary: oklch(0.22 0.03 270);
   --secondary-foreground: oklch(0.97 0.005 265);

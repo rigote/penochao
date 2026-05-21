@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
-import { PiggyBank, Sparkles } from "lucide-react"
 import { Separator } from "@/app/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
 import { UserMenu } from "./components/user-menu"
@@ -10,6 +9,7 @@ import { db } from "@/db"
 import { FeedbackDialog } from "@/app/components/shared/feedback-dialog"
 import { AnalyticsProvider } from "@/app/components/analytics-provider"
 import { resolveEffectiveUserPlan } from "@/lib/subscription"
+import { ThemeLogo } from "@/app/components/shared/theme-logo"
 
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -47,7 +47,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     image: dbUser.image || null,
   }
 
-  const navItems = [...baseNavItems]
+  const navItems = baseNavItems.filter((item) => {
+    if (dbUser.plan !== "pro" && (item.href === "/assistente" || item.href === "/faturas")) {
+      return false
+    }
+
+    return true
+  })
   const ADMIN_EMAILS = ["matheus.rigote@gmail.com", "ipelabsapp@gmail.com"]
 
   if (user.email && ADMIN_EMAILS.includes(user.email)) {
@@ -65,17 +71,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex flex-col h-full">
             {/* Logo Area */}
             <div className="p-6">
-              <Link href="/dashboard" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                  <PiggyBank className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <span className="font-bold text-xl">Penochão</span>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Controle Financeiro
-                  </p>
-                </div>
+              <Link href="/dashboard" className="flex items-center">
+                <ThemeLogo className="h-12" priority />
               </Link>
             </div>
 
