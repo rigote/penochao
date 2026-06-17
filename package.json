@@ -80,7 +80,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.1.0",
+    "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^20.0.0",
     "@swc/cli": "^0.7.8",
     "@swc/core": "^1.13.5",
