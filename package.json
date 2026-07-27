@@ -27,7 +27,7 @@
     "lint-staged": "lint-staged"
   },
   "dependencies": {
-    "@auth/core": "^0.34.3",
+    "@auth/core": "^0.41.3",
     "@auth/drizzle-adapter": "^1.10.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
@@ -60,7 +60,7 @@
     "geist": "^1.5.1",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
-    "lucide-react": "^0.545.0",
+    "lucide-react": "^0.577.0",
     "next": "^16.2.6",
     "next-auth": "^4.24.12",
     "react": "19",
